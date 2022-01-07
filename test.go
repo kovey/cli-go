@@ -24,8 +24,17 @@ func main() {
 		fmt.Printf("pid[%d]\n", a.Pid())
 		return nil
 	}
-	cli.Add("config", "", app.TYPE_STRING, "config path")
-	cli.Add("count", 0, app.TYPE_INT, "reload count")
+	cli.Reload = func(a *app.App) error {
+		fmt.Println("app is reload")
+		return nil
+	}
+	cli.Stop = func(a *app.App) error {
+		fmt.Println("app is stop")
+		return nil
+	}
+
+	cli.Flag("config", "", app.TYPE_STRING, "config path")
+	cli.Flag("count", 0, app.TYPE_INT, "reload count")
 	err := cli.Run()
 	if err != nil {
 		panic(err)
