@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	cli := app.NewApp()
+	cli := app.NewApp("test")
 	cli.Action = func(a *app.App) error {
 		fmt.Println("app is running")
 		path, err := a.Get("config")

@@ -1,17 +1,31 @@
 package util
 
 import (
-	"fmt"
-	"path"
+	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func RunDir() string {
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		panic("get path error")
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		panic("get run path error")
 	}
 
-	fmt.Println(filename)
-	return path.Dir(filename)
+	return strings.Replace(dir, "\\", "/", -1)
+}
+
+func IsFile(file string) bool {
+	_, err := os.Stat(file)
+	if err == nil {
+		return true
+	}
+
+	return os.IsExist(err)
+}
+
+func CurrentDir() string {
+	_, file, _, _ := runtime.Caller(1)
+	return filepath.Dir(file)
 }
