@@ -37,12 +37,27 @@ func NewApp(name string) *App {
 		flags: make(map[string]*Flag), sigChan: make(chan os.Signal, 1), isStop: false,
 		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name,
 	}
-	a.Flag("s", "no", TYPE_STRING, "signal: reload|maintain|stop")
+	a.flag("s", "no", TYPE_STRING, "signal: reload|maintain|stop")
 	return a
 }
 
-func (a *App) Flag(name string, def interface{}, t Type, comment string) {
+func (a *App) flag(name string, def interface{}, t Type, comment string) {
+	_, ok := a.flags[name]
+	if ok {
+		fmt.Printf("[warn] flag[%s] is registed\n", name)
+		return
+	}
+
 	a.flags[name] = &Flag{name: name, def: def, t: t, comment: comment}
+}
+
+func (a *App) Flag(name string, def interface{}, t Type, comment string) {
+	if name == "s" {
+		fmt.Printf("[warn] flag[s] is used by sinal module\n")
+		return
+	}
+
+	a.flag(name, def, t, comment)
 }
 
 func (a *App) Get(name string) (*Flag, error) {

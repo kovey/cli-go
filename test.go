@@ -21,7 +21,6 @@ func main() {
 
 		fmt.Printf("config[%s]\n", path.String())
 		fmt.Printf("count[%d]\n", count.Int())
-		fmt.Printf("pid[%d]\n", a.Pid())
 		return nil
 	}
 
@@ -36,7 +35,8 @@ func main() {
 	}
 
 	cli.Flag("config", "", app.TYPE_STRING, "config path")
-	cli.Flag("count", 0, app.TYPE_INT, "reload count")
+	cli.Flag("count", 100, app.TYPE_INT, "reload count")
+	cli.Flag("s", "", app.TYPE_STRING, "signal")
 	err := cli.Run()
 	if err != nil {
 		panic(err)
