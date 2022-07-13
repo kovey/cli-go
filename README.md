@@ -1,10 +1,10 @@
 # kovey cli of terminal by golang
 ### Description
-#### This is a cli app library
+#### This is a cli app library with golang
 #### Default flag "s" is signal, contains reload, stop and maintain
-#### app will call Stop callback when recevie stop signal
-#### app will call Reload callback when recevie reload signal
-#### app will call Maintain callback when recevie maintain signal
+#### App will call Stop callback when recevie stop signal
+#### App will call Reload callback when app is stoped
+#### App will call Maintain callback when recevie maintain signal
 ### Usage
     go get -u github.com/kovey/cli-go
 ### Examples
