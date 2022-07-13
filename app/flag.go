@@ -11,36 +11,60 @@ const (
 )
 
 type Flag struct {
-	Name    string
-	Type    Type
-	Default interface{}
-	Comment string
-	Value   interface{}
+	name    string
+	t       Type
+	def     interface{}
+	comment string
+	value   interface{}
 }
 
-func (f *Flag) Parse() {
-	switch f.Type {
+func (f *Flag) parse() {
+	switch f.t {
 	case TYPE_INT:
-		val, ok := f.Default.(int)
+		val, ok := f.def.(int)
 		if !ok {
 			break
 		}
 
-		f.Value = flag.Int(f.Name, val, f.Comment)
+		f.value = flag.Int(f.name, val, f.comment)
 		break
 	case TYPE_BOOL:
-		val, ok := f.Default.(bool)
+		val, ok := f.def.(bool)
 		if !ok {
 			break
 		}
-		f.Value = flag.Bool(f.Name, val, f.Comment)
+		f.value = flag.Bool(f.name, val, f.comment)
 		break
 	case TYPE_STRING:
-		val, ok := f.Default.(string)
+		val, ok := f.def.(string)
 		if !ok {
 			break
 		}
 
-		f.Value = flag.String(f.Name, val, f.Comment)
+		f.value = flag.String(f.name, val, f.comment)
 	}
+}
+
+func (f *Flag) String() string {
+	if f.t != TYPE_STRING {
+		return ""
+	}
+
+	return *(f.value.(*string))
+}
+
+func (f *Flag) Int() int {
+	if f.t != TYPE_INT {
+		return 0
+	}
+
+	return *(f.value.(*int))
+}
+
+func (f *Flag) Bool() bool {
+	if f.t != TYPE_BOOL {
+		return false
+	}
+
+	return *(f.value.(*bool))
 }

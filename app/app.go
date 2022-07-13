@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 )
 
 type App struct {
@@ -29,7 +30,7 @@ type App struct {
 
 func NewApp(name string) *App {
 	if len(name) == 0 {
-		panic("name is empty")
+		panic("app name is empty")
 	}
 
 	a := &App{
@@ -41,16 +42,16 @@ func NewApp(name string) *App {
 }
 
 func (a *App) Flag(name string, def interface{}, t Type, comment string) {
-	a.flags[name] = &Flag{Name: name, Default: def, Type: t, Comment: comment}
+	a.flags[name] = &Flag{name: name, def: def, t: t, comment: comment}
 }
 
-func (a *App) Get(name string) (interface{}, error) {
+func (a *App) Get(name string) (*Flag, error) {
 	f, ok := a.flags[name]
 	if !ok {
 		return nil, fmt.Errorf("[%s] is not exists", name)
 	}
 
-	return f.Value, nil
+	return f, nil
 }
 
 func (a *App) Pid() int {
@@ -61,9 +62,9 @@ func (a *App) PidString() string {
 	return strconv.Itoa(a.pid)
 }
 
-func (a *App) Parse() {
+func (a *App) parse() {
 	for _, flag := range a.flags {
-		flag.Parse()
+		flag.parse()
 	}
 
 	flag.Parse()
@@ -93,16 +94,12 @@ func (a *App) signal() bool {
 		return false
 	}
 
-	sig, ok := s.(*string)
-	if !ok {
+	sig := s.String()
+	if sig == "no" {
 		return false
 	}
 
-	if *sig == "no" {
-		return false
-	}
-
-	switch *sig {
+	switch sig {
 	case "reload":
 		pid := a.getPid()
 		if pid < 2 {
@@ -139,7 +136,7 @@ func (a *App) signal() bool {
 }
 
 func (a *App) Run() error {
-	a.Parse()
+	a.parse()
 	if a.signal() {
 		return nil
 	}
@@ -162,6 +159,8 @@ func (a *App) Run() error {
 	signal.Notify(a.sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1)
 	a.wait.Add(1)
 	go a.listen()
+	fmt.Printf("[%s] app[%s] run, pid[%s]\n", time.Now().Format(util.GOLANG_BIRTHDAY), a.name, a.PidString())
+
 	err = a.Action(a)
 	if !a.isStop {
 		a.sigChan <- os.Interrupt

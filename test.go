@@ -19,15 +19,17 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("config[%s]\n", *(path.(*string)))
-		fmt.Printf("count[%d]\n", *(count.(*int)))
+		fmt.Printf("config[%s]\n", path.String())
+		fmt.Printf("count[%d]\n", count.Int())
 		fmt.Printf("pid[%d]\n", a.Pid())
 		return nil
 	}
+
 	cli.Reload = func(a *app.App) error {
 		fmt.Println("app is reload")
 		return nil
 	}
+
 	cli.Stop = func(a *app.App) error {
 		fmt.Println("app is stop")
 		return nil
