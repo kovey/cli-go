@@ -1,7 +1,6 @@
 package app
 
 import (
-	"cli/util"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/kovey/cli-go/util"
 )
 
 type App struct {
