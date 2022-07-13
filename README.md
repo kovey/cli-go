@@ -8,7 +8,7 @@
     package main
 
     import (
-        "cli/app"
+        "github.com/kovey/cli-go/app"
         "fmt"
     )
 
