@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
-	"time"
 
+	"github.com/kovey/cli-go/debug"
 	"github.com/kovey/cli-go/util"
 )
 
@@ -45,7 +45,7 @@ func NewApp(name string) *App {
 func (a *App) flag(name string, def interface{}, t Type, comment string) {
 	_, ok := a.flags[name]
 	if ok {
-		fmt.Printf("[warn] flag[%s] is registed\n", name)
+		debug.Warn("flag[%s] is registed", name)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (a *App) flag(name string, def interface{}, t Type, comment string) {
 
 func (a *App) Flag(name string, def interface{}, t Type, comment string) {
 	if name == "s" {
-		fmt.Printf("[warn] flag[s] is used by sinal module\n")
+		debug.Warn("flag[%s] is used by sinal module", name)
 		return
 	}
 
@@ -119,34 +119,34 @@ func (a *App) signal() bool {
 	case "reload":
 		pid := a.getPid()
 		if pid < 2 {
-			fmt.Printf("%s is not running\n", a.name)
+			debug.Erro("[%s] is not running", a.name)
 			return true
 		}
 
 		syscall.Kill(pid, syscall.SIGUSR2)
-		fmt.Printf("%s[%d] reload\n", a.name, pid)
+		debug.Info("%s[%d] reload", a.name, pid)
 		return true
 	case "maintain":
 		pid := a.getPid()
 		if pid < 2 {
-			fmt.Printf("%s is not running\n", a.name)
+			debug.Erro("[%s] is not running", a.name)
 			return true
 		}
 		syscall.Kill(pid, syscall.SIGUSR1)
-		fmt.Printf("%s[%d] maintain\n", a.name, pid)
+		debug.Info("%s[%d] maintain", a.name, pid)
 		return true
 	case "stop":
 		pid := a.getPid()
 		if pid < 2 {
-			fmt.Printf("%s is not running\n", a.name)
+			debug.Erro("[%s] is not running", a.name)
 			return true
 		}
 
 		syscall.Kill(pid, syscall.SIGTERM)
-		fmt.Printf("%s[%d] stop\n", a.name, pid)
+		debug.Info("%s[%d] stop", a.name, pid)
 		return true
 	default:
-		fmt.Println("unknown signal")
+		debug.Warn("unknown signal")
 		return true
 	}
 }
@@ -175,7 +175,7 @@ func (a *App) Run() error {
 	signal.Notify(a.sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1)
 	a.wait.Add(1)
 	go a.listen()
-	fmt.Printf("[%s] app[%s] run, pid[%s]\n", time.Now().Format(util.GOLANG_BIRTHDAY), a.name, a.PidString())
+	debug.Info("app[%s] run, pid[%s]", a.name, a.PidString())
 
 	err = a.Action(a)
 	if !a.isStop {

@@ -1,6 +1,10 @@
 # kovey cli of terminal by golang
 ### Description
 #### This is a cli app library
+#### Default flag "s" is sinal, contains reload, stop and maintain
+#### app will call Stop callback when recevie stop sinal
+#### app will call Reload callback when recevie reload sinal
+#### app will call Maintain callback when recevie maintain sinal
 ### Usage
     go get -u github.com/kovey/cli-go
 ### Examples
@@ -9,13 +13,13 @@
 
     import (
         "github.com/kovey/cli-go/app"
-        "fmt"
+        "github.com/kovey/cli-go/debug"
     )
 
     func main() {
         cli := app.NewApp("sample example")
         cli.Action = func(a *app.App) error {
-            fmt.Println("app is running")
+            debug.Info("app is running")
             path, err := a.Get("c")
             if err != nil {
                 return err
@@ -31,19 +35,19 @@
                 return err
             }
 
-            fmt.Printf("c is [%s]\n", path.String())
-            fmt.Printf("i is [%s]\n", i.Int())
-            fmt.Printf("b is [%t]\n", b.Bool())
+            debug.Info("c is [%s]", path.String())
+            debug.Info("i is [%s]", i.Int())
+            debug.Info("b is [%t]", b.Bool())
             return nil
         }
 
         cli.Reload = func(a *app.App) error {
-            fmt.Println("app is reload")
+            debug.Info("app is reload")
             return nil
         }
 
         cli.Stop = func(a *app.App) error {
-            fmt.Println("app is stop")
+            debug.Info("app is stop")
             return nil
         }
 
@@ -59,5 +63,8 @@
 
 ```
 ```bash
-   go run main.go -c test -i 100 -b false
+   go run main.go -c test -i 100 -b false # run app
+   go run main.go -s reload # reload app
+   go run main.go -s stop # stop app
+   go run main.go -s maintain # maintain app
 ```

@@ -1,15 +1,14 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/kovey/cli-go/app"
+	"github.com/kovey/cli-go/debug"
 )
 
 func main() {
 	cli := app.NewApp("test")
 	cli.Action = func(a *app.App) error {
-		fmt.Println("app is running")
+		debug.Info("app is running")
 		path, err := a.Get("config")
 		if err != nil {
 			return err
@@ -20,22 +19,23 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("config[%s]\n", path.String())
-		fmt.Printf("count[%d]\n", count.Int())
+		debug.Info("config[%s]", path.String())
+		debug.Info("count[%d]", count.Int())
 		return nil
 	}
 
 	cli.Reload = func(a *app.App) error {
-		fmt.Println("app is reload")
+		debug.Info("app is reload")
 		return nil
 	}
 
 	cli.Stop = func(a *app.App) error {
-		fmt.Println("app is stop")
+		debug.Info("app is stop")
 		return nil
 	}
 
 	cli.Flag("config", "", app.TYPE_STRING, "config path")
+	cli.Flag("count", 100, app.TYPE_INT, "reload count")
 	cli.Flag("count", 100, app.TYPE_INT, "reload count")
 	cli.Flag("s", "", app.TYPE_STRING, "signal")
 	err := cli.Run()
