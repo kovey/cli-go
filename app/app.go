@@ -161,11 +161,15 @@ func (a *App) Run() error {
 		return fmt.Errorf("Action is nil")
 	}
 
-	a.pid = os.Getpid()
-
 	if a.PidFile != nil {
 		a.pidFile = a.PidFile(a)
 	}
+
+	if util.IsFile(a.pidFile) {
+		return fmt.Errorf("app[%s] is running", a.name)
+	}
+
+	a.pid = os.Getpid()
 
 	err := ioutil.WriteFile(a.pidFile, []byte(a.PidString()), 0644)
 	if err != nil {
