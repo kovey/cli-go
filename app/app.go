@@ -152,6 +152,13 @@ func (a *App) signal() bool {
 }
 
 func (a *App) Run() error {
+	defer func() {
+		if a.pidFile != "" {
+			os.Remove(a.pidFile)
+		}
+		debug.Panic(recover())
+	}()
+
 	a.parse()
 	if a.signal() {
 		return nil
@@ -210,7 +217,6 @@ loop:
 			default:
 				if a.Stop != nil {
 					a.isStop = true
-					os.Remove(a.pidFile)
 					a.Stop(a)
 				}
 				break loop
