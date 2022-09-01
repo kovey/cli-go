@@ -152,13 +152,6 @@ func (a *App) signal() bool {
 }
 
 func (a *App) Run() error {
-	defer func() {
-		if a.pidFile != "" {
-			os.Remove(a.pidFile)
-		}
-		debug.Panic(recover())
-	}()
-
 	a.parse()
 	if a.signal() {
 		return nil
@@ -167,6 +160,13 @@ func (a *App) Run() error {
 	if a.Action == nil {
 		return fmt.Errorf("Action is nil")
 	}
+
+	defer func() {
+		if a.pidFile != "" {
+			os.Remove(a.pidFile)
+		}
+		debug.Panic(recover())
+	}()
 
 	if a.PidFile != nil {
 		a.pidFile = a.PidFile(a)
@@ -199,7 +199,6 @@ func (a *App) Run() error {
 func (a *App) listen() {
 	defer a.wait.Done()
 	defer close(a.sigChan)
-loop:
 	for {
 		select {
 		case sig := <-a.sigChan:
@@ -208,18 +207,18 @@ loop:
 				if a.Reload != nil {
 					a.Reload(a)
 				}
-				break
+				return
 			case syscall.SIGUSR1:
 				if a.Maintain != nil {
 					a.Maintain(a)
 				}
-				break
+				return
 			default:
 				if a.Stop != nil {
 					a.isStop = true
 					a.Stop(a)
 				}
-				break loop
+				return
 			}
 		}
 	}
