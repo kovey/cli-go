@@ -66,5 +66,5 @@
    go run main.go -c test -i 100 -b false # run app
    go run main.go -s reload # reload app
    go run main.go -s stop # stop app
-   go run main.go -s maintain # maintain app
+   go run main.go -s info # open or close show app info
 ```

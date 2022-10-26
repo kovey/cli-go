@@ -6,27 +6,31 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/kovey/cli-go/debug"
+	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/cli-go/util"
 )
 
 type App struct {
-	Action   func(*App) error
-	Reload   func(*App) error
-	Stop     func(*App) error
-	Maintain func(*App) error
-	PidFile  func(*App) string
-	flags    map[string]*Flag
-	pid      int
-	sigChan  chan os.Signal
-	isStop   bool
-	wait     sync.WaitGroup
-	pidFile  string
-	name     string
+	Action     func(*App) error
+	Reload     func(*App) error
+	Stop       func(*App) error
+	PidFile    func(*App) string
+	flags      map[string]*Flag
+	ticker     *time.Ticker
+	pid        int
+	sigChan    chan os.Signal
+	isStop     bool
+	wait       sync.WaitGroup
+	pidFile    string
+	name       string
+	isShowInfo bool
 }
 
 func NewApp(name string) *App {
@@ -35,10 +39,10 @@ func NewApp(name string) *App {
 	}
 
 	a := &App{
-		flags: make(map[string]*Flag), sigChan: make(chan os.Signal, 1), isStop: false,
-		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name,
+		flags: make(map[string]*Flag), sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false,
+		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name, ticker: time.NewTicker(1 * time.Minute),
 	}
-	a.flag("s", "no", TYPE_STRING, "signal: reload|maintain|stop")
+	a.flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
 	return a
 }
 
@@ -126,14 +130,14 @@ func (a *App) signal() bool {
 		syscall.Kill(pid, syscall.SIGUSR2)
 		debug.Info("%s[%d] reload", a.name, pid)
 		return true
-	case "maintain":
+	case "info":
 		pid := a.getPid()
 		if pid < 2 {
 			debug.Erro("[%s] is not running", a.name)
 			return true
 		}
 		syscall.Kill(pid, syscall.SIGUSR1)
-		debug.Info("%s[%d] maintain", a.name, pid)
+		debug.Info("%s[%d] show or hide info", a.name, pid)
 		return true
 	case "stop":
 		pid := a.getPid()
@@ -188,6 +192,7 @@ func (a *App) Run() error {
 	go a.listen()
 	debug.Info("app[%s] run, pid[%s]", a.name, a.PidString())
 
+	startTime = time.Now()
 	err = a.Action(a)
 	if !a.isStop {
 		a.sigChan <- os.Interrupt
@@ -199,20 +204,26 @@ func (a *App) Run() error {
 func (a *App) listen() {
 	defer a.wait.Done()
 	defer close(a.sigChan)
+	defer a.ticker.Stop()
+
 	for {
 		select {
+		case _, ok := <-a.ticker.C:
+			if !ok {
+				a.isStop = true
+				return
+			}
+			if a.isShowInfo {
+				a.show()
+			}
 		case sig := <-a.sigChan:
 			switch sig {
 			case syscall.SIGUSR2:
 				if a.Reload != nil {
 					a.Reload(a)
 				}
-				return
 			case syscall.SIGUSR1:
-				if a.Maintain != nil {
-					a.Maintain(a)
-				}
-				return
+				a.isShowInfo = !a.isShowInfo
 			default:
 				if a.Stop != nil {
 					a.isStop = true
@@ -222,4 +233,33 @@ func (a *App) listen() {
 			}
 		}
 	}
+}
+
+func (a *App) Name() string {
+	return a.name
+}
+
+func (a *App) show() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	table := gui.NewTable()
+	table.Add(fmt.Sprintf("app[%s]", a.name))
+	table.Add(fmt.Sprintf("golang version[%s]", runtime.Version()))
+	table.Add(fmt.Sprintf("start time[%s]", StartTimestamp()))
+	table.Add(fmt.Sprintf("run time[%s]", GetFormatRunTime()))
+	table.Add(fmt.Sprintf("total alloc[%d](bytes)", m.TotalAlloc))
+	table.Add(fmt.Sprintf("alloc[%d](bytes)", m.Alloc))
+	table.Add(fmt.Sprintf("active objects[%d]", m.Mallocs))
+	table.Add(fmt.Sprintf("free objects[%d]", m.Frees))
+	table.Add(fmt.Sprintf("heap alloc[%d](bytes)", m.HeapAlloc))
+	table.Add(fmt.Sprintf("heap idle[%d](bytes)", m.HeapIdle))
+	table.Add(fmt.Sprintf("heap released[%d](bytes)", m.HeapReleased))
+	table.Add(fmt.Sprintf("heap sys[%d](bytes)", m.HeapSys))
+	table.Add(fmt.Sprintf("heap in use[%d](bytes)", m.HeapInuse))
+	table.Add(fmt.Sprintf("heap objects[%d]", m.HeapObjects))
+	table.Add(fmt.Sprintf("stack in use[%d](bytes)", m.StackInuse))
+	table.Add(fmt.Sprintf("stack sys[%d](bytes)", m.StackSys))
+	table.Add(fmt.Sprintf("gc cpu fraction[%f](ms)", m.GCCPUFraction))
+	table.Add(fmt.Sprintf("gc sys[%d](bytes)", m.GCSys))
+	table.Show()
 }

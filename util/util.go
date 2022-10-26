@@ -11,6 +11,13 @@ const (
 	GOLANG_BIRTHDAY = "2006-01-02 15:04:05"
 )
 
+const (
+	Unit_Second int64 = 1
+	Unit_Minute int64 = 60 * Unit_Second
+	Unit_Hour   int64 = 60 * Unit_Minute
+	Unit_Day    int64 = 24 * Unit_Hour
+)
+
 func RunDir() string {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
