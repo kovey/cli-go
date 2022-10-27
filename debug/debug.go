@@ -5,10 +5,32 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/kovey/cli-go/color"
 	"github.com/kovey/cli-go/util"
 )
 
 type DebugType string
+
+type DebugValue int32
+
+type DebugLevels map[DebugType]DebugValue
+
+var level DebugValue = val_info
+
+func (d DebugLevels) CanShow(t DebugType) bool {
+	if l, ok := d[t]; ok {
+		return l >= level
+	}
+
+	return false
+}
+
+const (
+	val_info DebugValue = 1
+	val_warn DebugValue = 2
+	val_erro DebugValue = 3
+	val_none DebugValue = 4
+)
 
 const (
 	info DebugType = "info"
@@ -20,8 +42,27 @@ const (
 	echoFormat = "[%s][%s] %s\n"
 )
 
+var maps = DebugLevels{
+	info: val_info,
+	warn: val_warn,
+	erro: val_erro,
+}
+
 func echo(format string, t DebugType, args ...interface{}) {
-	fmt.Printf(echoFormat, time.Now().Format(util.GOLANG_BIRTHDAY), t, fmt.Sprintf(format, args...))
+	if !maps.CanShow(t) {
+		return
+	}
+
+	switch t {
+	case warn:
+		str := fmt.Sprintf(echoFormat, time.Now().Format(util.GOLANG_BIRTHDAY), t, fmt.Sprintf(format, args...))
+		fmt.Print(color.Yellow(str))
+	case erro:
+		str := fmt.Sprintf(echoFormat, time.Now().Format(util.GOLANG_BIRTHDAY), t, fmt.Sprintf(format, args...))
+		fmt.Print(color.Red(str))
+	default:
+		fmt.Printf(echoFormat, time.Now().Format(util.GOLANG_BIRTHDAY), t, fmt.Sprintf(format, args...))
+	}
 }
 
 func Info(format string, args ...interface{}) {

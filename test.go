@@ -9,6 +9,8 @@ func main() {
 	cli := app.NewApp("test")
 	cli.Action = func(a *app.App) error {
 		debug.Info("app is running")
+		debug.Warn("this is warning")
+		debug.Erro("this is error")
 		path, err := a.Get("config")
 		if err != nil {
 			return err
