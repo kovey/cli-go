@@ -21,6 +21,7 @@ type App struct {
 	Action     func(*App) error
 	Reload     func(*App) error
 	Stop       func(*App) error
+	Show       func(*gui.Table)
 	PidFile    func(*App) string
 	flags      map[string]*Flag
 	ticker     *time.Ticker
@@ -261,5 +262,9 @@ func (a *App) show() {
 	table.Add(fmt.Sprintf("stack sys[%d](bytes)", m.StackSys))
 	table.Add(fmt.Sprintf("gc cpu fraction[%f](ms)", m.GCCPUFraction))
 	table.Add(fmt.Sprintf("gc sys[%d](bytes)", m.GCSys))
+	if a.Show != nil {
+		table.AddRepeat("-")
+		a.Show(table)
+	}
 	table.Show()
 }

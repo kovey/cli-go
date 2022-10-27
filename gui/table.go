@@ -14,6 +14,10 @@ func (t *Table) Add(data string) {
 	t.rows = append(t.rows, NewRow(data))
 }
 
+func (t *Table) AddRepeat(repeat string) {
+	t.rows = append(t.rows, NewRepeatRow(repeat))
+}
+
 func (t *Table) rowMaxLen() int {
 	var maxLen = 0
 	for _, row := range t.rows {
