@@ -4,7 +4,7 @@
 #### Default flag "s" is signal, contains reload, stop and maintain
 #### App will call Stop callback when recevie stop signal
 #### App will call Reload callback when app is stoped
-#### App will call Maintain callback when recevie maintain signal
+#### App will open show when recevie info signal
 ### Usage
     go get -u github.com/kovey/cli-go
 ### Examples
