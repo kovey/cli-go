@@ -7,6 +7,7 @@ import (
 
 func main() {
 	cli := app.NewApp("test")
+	cli.SetDebugLevel(debug.Debug_Info)
 	cli.Action = func(a *app.App) error {
 		debug.Info("app is running")
 		debug.Warn("this is warning")
