@@ -240,6 +240,10 @@ func (a *App) Name() string {
 	return a.name
 }
 
+func (a *App) SetDebugLevel(t debug.DebugType) {
+	debug.SetLevel(t)
+}
+
 func (a *App) show() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
