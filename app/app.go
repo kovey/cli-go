@@ -12,9 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kovey/cli-go/debug"
 	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/cli-go/util"
+	"github.com/kovey/debug-go/debug"
+	"github.com/kovey/debug-go/run"
 )
 
 type App struct {
@@ -170,7 +171,7 @@ func (a *App) Run() error {
 		if a.pidFile != "" {
 			os.Remove(a.pidFile)
 		}
-		debug.Panic(recover())
+		run.Panic(recover())
 	}()
 
 	if a.PidFile != nil {

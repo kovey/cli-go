@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kovey/cli-go/app"
-	"github.com/kovey/cli-go/debug"
+	"github.com/kovey/debug-go/debug"
 )
 
 func main() {
