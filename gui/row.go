@@ -5,17 +5,17 @@ import (
 )
 
 type Row struct {
-	Begin    string
 	Data     string
-	End      string
 	Len      int
 	prev     string
 	suff     string
 	isRepeat bool
+	IsHeader bool
+	IsFoot   bool
 }
 
 func NewRow(data string) *Row {
-	r := &Row{Begin: "+", End: "+", Data: data, isRepeat: false}
+	r := &Row{Data: data, isRepeat: false}
 	r.init()
 	return r
 }
@@ -26,8 +26,27 @@ func NewRepeatRow(data string) *Row {
 	return r
 }
 
+func NewHeader() *Row {
+	r := NewRepeatRow(Border_Horizontal)
+	r.IsHeader = true
+	return r
+}
+
+func NewFoot() *Row {
+	r := NewRepeatRow(Border_Horizontal)
+	r.IsFoot = true
+	return r
+}
+
 func (r *Row) init() {
-	r.Len = len(r.Begin) + len(r.End) + len(r.Data)
+	texts := []rune(r.Data)
+	other := 0
+	for _, text := range texts {
+		if IsChinese(string(text)) {
+			other++
+		}
+	}
+	r.Len = len(Border_Left_Up) + len(Border_Right_Up) + len(texts) + other
 }
 
 func (r *Row) Adjust(maxLen int) {
@@ -53,5 +72,15 @@ func (r *Row) Adjust(maxLen int) {
 }
 
 func (r *Row) Show() {
-	fmt.Println(fmt.Sprintf("%s%s%s%s%s", r.Begin, r.prev, r.Data, r.suff, r.End))
+	if r.IsHeader {
+		fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Left_Up, r.prev, r.Data, r.suff, Border_Right_Up))
+		return
+	}
+
+	if r.IsFoot {
+		fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Left_Bottom, r.prev, r.Data, r.suff, Border_Right_Bottom))
+		return
+	}
+
+	fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Vertical, r.prev, r.Data, r.suff, Border_Vertical))
 }

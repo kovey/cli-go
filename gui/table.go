@@ -7,7 +7,7 @@ type Table struct {
 }
 
 func NewTable() *Table {
-	return &Table{rows: make([]*Row, 0), header: NewRepeatRow("-"), foot: NewRepeatRow("-")}
+	return &Table{rows: make([]*Row, 0), header: NewHeader(), foot: NewFoot()}
 }
 
 func (t *Table) Add(data string) {
