@@ -82,5 +82,10 @@ func (r *Row) Show() {
 		return
 	}
 
+	if r.isRepeat {
+		fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Left_Center, r.prev, r.Data, r.suff, Border_Right_Center))
+		return
+	}
+
 	fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Vertical, r.prev, r.Data, r.suff, Border_Vertical))
 }

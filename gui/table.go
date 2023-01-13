@@ -12,6 +12,7 @@ func NewTable() *Table {
 
 func (t *Table) Add(data string) {
 	t.rows = append(t.rows, NewRow(data))
+	t.AddRepeat(Border_Horizontal)
 }
 
 func (t *Table) AddRepeat(repeat string) {
@@ -33,9 +34,10 @@ func (t *Table) Show() {
 	maxLen := t.rowMaxLen()
 	t.header.Adjust(maxLen)
 	t.header.Show()
-	for _, row := range t.rows {
-		row.Adjust(maxLen)
-		row.Show()
+	length := len(t.rows) - 1
+	for i := 0; i < length; i++ {
+		t.rows[i].Adjust(maxLen)
+		t.rows[i].Show()
 	}
 	t.foot.Adjust(maxLen)
 	t.foot.Show()

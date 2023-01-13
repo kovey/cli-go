@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kovey/cli-go/app"
+	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/debug-go/debug"
 )
 
@@ -35,6 +36,9 @@ func main() {
 	cli.Stop = func(a *app.App) error {
 		debug.Info("app is stop")
 		return nil
+	}
+	cli.Show = func(table *gui.Table) {
+		table.Add("custom")
 	}
 
 	cli.Flag("config", "", app.TYPE_STRING, "config path")

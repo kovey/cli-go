@@ -268,7 +268,7 @@ func (a *App) show() {
 	table.Add(fmt.Sprintf("gc cpu fraction[%f](ms)", m.GCCPUFraction))
 	table.Add(fmt.Sprintf("gc sys[%d](bytes)", m.GCSys))
 	if a.Show != nil {
-		table.AddRepeat("-")
+		table.AddRepeat(gui.Border_Horizontal)
 		a.Show(table)
 	}
 	table.Show()
