@@ -3,7 +3,6 @@ package app
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"runtime"
@@ -97,7 +96,7 @@ func (a *App) getPid() int {
 		a.pidFile = a.PidFile(a)
 	}
 
-	pid, err := ioutil.ReadFile(a.pidFile)
+	pid, err := os.ReadFile(a.pidFile)
 	if err != nil {
 		return -1
 	}
@@ -184,7 +183,7 @@ func (a *App) Run() error {
 
 	a.pid = os.Getpid()
 
-	err := ioutil.WriteFile(a.pidFile, []byte(a.PidString()), 0644)
+	err := os.WriteFile(a.pidFile, []byte(a.PidString()), 0644)
 	if err != nil {
 		return err
 	}
@@ -205,7 +204,6 @@ func (a *App) Run() error {
 
 func (a *App) listen() {
 	defer a.wait.Done()
-	defer close(a.sigChan)
 	defer a.ticker.Stop()
 
 	for {
