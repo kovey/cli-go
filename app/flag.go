@@ -13,9 +13,9 @@ const (
 type Flag struct {
 	name    string
 	t       Type
-	def     interface{}
+	def     any
 	comment string
-	value   interface{}
+	value   any
 }
 
 func (f *Flag) parse() {
@@ -27,14 +27,12 @@ func (f *Flag) parse() {
 		}
 
 		f.value = flag.Int(f.name, val, f.comment)
-		break
 	case TYPE_BOOL:
 		val, ok := f.def.(bool)
 		if !ok {
 			break
 		}
 		f.value = flag.Bool(f.name, val, f.comment)
-		break
 	case TYPE_STRING:
 		val, ok := f.def.(string)
 		if !ok {
