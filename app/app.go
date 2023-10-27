@@ -189,6 +189,14 @@ func (a *App) Run() error {
 		return nil
 	}
 
+	if a.PidFile != nil {
+		a.pidFile = a.PidFile(a)
+	}
+
+	if util.IsFile(a.pidFile) {
+		return fmt.Errorf("app[%s] is running", a.name)
+	}
+
 	if a.serv == nil {
 		if a.Action == nil {
 			return fmt.Errorf("Action is nil")
@@ -205,14 +213,6 @@ func (a *App) Run() error {
 		}
 		run.Panic(recover())
 	}()
-
-	if a.PidFile != nil {
-		a.pidFile = a.PidFile(a)
-	}
-
-	if util.IsFile(a.pidFile) {
-		return fmt.Errorf("app[%s] is running", a.name)
-	}
 
 	a.pid = os.Getpid()
 
