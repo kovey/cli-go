@@ -7,6 +7,43 @@ import (
 )
 
 func main() {
+	testCallBack()
+	testServ()
+}
+
+type serv struct {
+}
+
+func (s *serv) Init(a *app.App) error {
+	debug.Info("[%s] init", a.Name())
+	return nil
+}
+
+func (s *serv) Run(a *app.App) error {
+	debug.Info("[%s] run", a.Name())
+	return nil
+}
+
+func (s *serv) Reload(a *app.App) error {
+	debug.Info("[%s] reload", a.Name())
+	return nil
+}
+
+func (s *serv) Shutdown(a *app.App) error {
+	debug.Info("[%s] shutdown", a.Name())
+	return nil
+}
+
+func testServ() {
+	cli := app.NewApp("test")
+	cli.SetDebugLevel(debug.Debug_Info)
+	cli.SetServ(&serv{})
+	if err := cli.Run(); err != nil {
+		panic(err)
+	}
+}
+
+func testCallBack() {
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
 	cli.Action = func(a *app.App) error {

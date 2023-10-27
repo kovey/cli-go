@@ -73,19 +73,19 @@ func (r *Row) Adjust(maxLen int) {
 
 func (r *Row) Show() {
 	if r.IsHeader {
-		fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Left_Up, r.prev, r.Data, r.suff, Border_Right_Up))
+		fmt.Printf("%s%s%s%s%s\n", Border_Left_Up, r.prev, r.Data, r.suff, Border_Right_Up)
 		return
 	}
 
 	if r.IsFoot {
-		fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Left_Bottom, r.prev, r.Data, r.suff, Border_Right_Bottom))
+		fmt.Printf("%s%s%s%s%s\n", Border_Left_Bottom, r.prev, r.Data, r.suff, Border_Right_Bottom)
 		return
 	}
 
 	if r.isRepeat {
-		fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Left_Center, r.prev, r.Data, r.suff, Border_Right_Center))
+		fmt.Printf("%s%s%s%s%s\n", Border_Left_Center, r.prev, r.Data, r.suff, Border_Right_Center)
 		return
 	}
 
-	fmt.Println(fmt.Sprintf("%s%s%s%s%s", Border_Vertical, r.prev, r.Data, r.suff, Border_Vertical))
+	fmt.Printf("%s%s%s%s%s\n", Border_Vertical, r.prev, r.Data, r.suff, Border_Vertical)
 }

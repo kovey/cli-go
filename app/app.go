@@ -32,6 +32,7 @@ type App struct {
 	pidFile    string
 	name       string
 	isShowInfo bool
+	serv       ServInterface
 }
 
 func NewApp(name string) *App {
@@ -45,6 +46,10 @@ func NewApp(name string) *App {
 	}
 	a.flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
 	return a
+}
+
+func (a *App) SetServ(serv ServInterface) {
+	a.serv = serv
 }
 
 func (a *App) flag(name string, def any, t Type, comment string) {
@@ -128,7 +133,11 @@ func (a *App) signal() bool {
 			return true
 		}
 
-		syscall.Kill(pid, syscall.SIGUSR2)
+		if err := syscall.Kill(pid, syscall.SIGUSR2); err != nil {
+			debug.Erro("%s[%d] reload failure, error: %s", a.name, pid, err)
+			return true
+		}
+
 		debug.Info("%s[%d] reload", a.name, pid)
 		return true
 	case "info":
@@ -137,7 +146,9 @@ func (a *App) signal() bool {
 			debug.Erro("[%s] is not running", a.name)
 			return true
 		}
-		syscall.Kill(pid, syscall.SIGUSR1)
+		if err := syscall.Kill(pid, syscall.SIGUSR1); err != nil {
+			debug.Erro("%s[%d] show or hide info failure, error: %s", a.name, pid, err)
+		}
 		debug.Info("%s[%d] show or hide info", a.name, pid)
 		return true
 	case "stop":
@@ -147,7 +158,10 @@ func (a *App) signal() bool {
 			return true
 		}
 
-		syscall.Kill(pid, syscall.SIGTERM)
+		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+			debug.Erro("%s[%d] stop failure, error: %s", a.name, pid, err)
+			return true
+		}
 		debug.Info("%s[%d] stop", a.name, pid)
 		return true
 	default:
@@ -162,8 +176,14 @@ func (a *App) Run() error {
 		return nil
 	}
 
-	if a.Action == nil {
-		return fmt.Errorf("Action is nil")
+	if a.serv == nil {
+		if a.Action == nil {
+			return fmt.Errorf("Action is nil")
+		}
+	} else {
+		if err := a.serv.Init(a); err != nil {
+			return err
+		}
 	}
 
 	defer func() {
@@ -194,7 +214,11 @@ func (a *App) Run() error {
 	debug.Info("app[%s] run, pid[%s]", a.name, a.PidString())
 
 	startTime = time.Now()
-	err = a.Action(a)
+	if a.serv == nil {
+		err = a.serv.Run(a)
+	} else {
+		err = a.Action(a)
+	}
 	if !a.isStop {
 		a.sigChan <- os.Interrupt
 	}
@@ -219,15 +243,31 @@ func (a *App) listen() {
 		case sig := <-a.sigChan:
 			switch sig {
 			case syscall.SIGUSR2:
-				if a.Reload != nil {
-					a.Reload(a)
+				if a.serv != nil {
+					if err := a.serv.Reload(a); err != nil {
+						debug.Erro("serv[%s] reload failure, error: %s", a.name, err)
+					}
+				} else {
+					if a.Reload != nil {
+						if err := a.Reload(a); err != nil {
+							debug.Erro("serv[%s] reload failure, error: %s", a.name, err)
+						}
+					}
 				}
 			case syscall.SIGUSR1:
 				a.isShowInfo = !a.isShowInfo
 			default:
+				a.isStop = true
+				if a.serv != nil {
+					if err := a.serv.Shutdown(a); err != nil {
+						debug.Erro("serv[%s] shutdown failure, error: %s", a.name, err)
+						return
+					}
+				}
 				if a.Stop != nil {
-					a.isStop = true
-					a.Stop(a)
+					if err := a.Stop(a); err != nil {
+						debug.Erro("serv[%s] shutdown failure, error: %s", a.name, err)
+					}
 				}
 				return
 			}
