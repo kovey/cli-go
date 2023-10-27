@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	testCallBack()
+	//testCallBack()
 	testServ()
 }
 
@@ -39,7 +39,7 @@ func testServ() {
 	cli.SetDebugLevel(debug.Debug_Info)
 	cli.SetServ(&serv{})
 	if err := cli.Run(); err != nil {
-		panic(err)
+		debug.Erro(err.Error())
 	}
 }
 
@@ -84,6 +84,6 @@ func testCallBack() {
 	cli.Flag("s", "", app.TYPE_STRING, "signal")
 	err := cli.Run()
 	if err != nil {
-		panic(err)
+		debug.Erro(err.Error())
 	}
 }

@@ -214,7 +214,7 @@ func (a *App) Run() error {
 	debug.Info("app[%s] run, pid[%s]", a.name, a.PidString())
 
 	startTime = time.Now()
-	if a.serv == nil {
+	if a.serv != nil {
 		err = a.serv.Run(a)
 	} else {
 		err = a.Action(a)
