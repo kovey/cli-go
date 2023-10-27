@@ -12,24 +12,25 @@ func main() {
 }
 
 type serv struct {
+	*app.ServBase
 }
 
-func (s *serv) Init(a *app.App) error {
+func (s *serv) Init(a app.AppInterface) error {
 	debug.Info("[%s] init", a.Name())
 	return nil
 }
 
-func (s *serv) Run(a *app.App) error {
+func (s *serv) Run(a app.AppInterface) error {
 	debug.Info("[%s] run", a.Name())
 	return nil
 }
 
-func (s *serv) Reload(a *app.App) error {
+func (s *serv) Reload(a app.AppInterface) error {
 	debug.Info("[%s] reload", a.Name())
 	return nil
 }
 
-func (s *serv) Shutdown(a *app.App) error {
+func (s *serv) Shutdown(a app.AppInterface) error {
 	debug.Info("[%s] shutdown", a.Name())
 	return nil
 }
@@ -46,7 +47,7 @@ func testServ() {
 func testCallBack() {
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
-	cli.Action = func(a *app.App) error {
+	cli.Action = func(a app.AppInterface) error {
 		debug.Info("app is running")
 		debug.Warn("this is warning")
 		debug.Erro("this is error")
@@ -65,12 +66,12 @@ func testCallBack() {
 		return nil
 	}
 
-	cli.Reload = func(a *app.App) error {
+	cli.Reload = func(a app.AppInterface) error {
 		debug.Info("app is reload")
 		return nil
 	}
 
-	cli.Stop = func(a *app.App) error {
+	cli.Stop = func(a app.AppInterface) error {
 		debug.Info("app is stop")
 		return nil
 	}

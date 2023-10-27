@@ -17,12 +17,19 @@ import (
 	"github.com/kovey/debug-go/run"
 )
 
+type AppInterface interface {
+	Get(name string) (*Flag, error)
+	Name() string
+	SetDebugLevel(t debug.DebugType)
+	Flag(name string, def any, t Type, comment string)
+}
+
 type App struct {
-	Action     func(*App) error
-	Reload     func(*App) error
-	Stop       func(*App) error
+	Action     func(AppInterface) error
+	Reload     func(AppInterface) error
+	Stop       func(AppInterface) error
 	Show       func(*gui.Table)
-	PidFile    func(*App) string
+	PidFile    func(AppInterface) string
 	flags      map[string]*Flag
 	ticker     *time.Ticker
 	pid        int
@@ -171,6 +178,12 @@ func (a *App) signal() bool {
 }
 
 func (a *App) Run() error {
+	if a.serv != nil {
+		if err := a.serv.Flag(a); err != nil {
+			return err
+		}
+	}
+
 	a.parse()
 	if a.signal() {
 		return nil
