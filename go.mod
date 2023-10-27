@@ -1,5 +1,5 @@
 module github.com/kovey/cli-go
 
-go 1.18
+go 1.20
 
-require github.com/kovey/debug-go v0.0.2
+require github.com/kovey/debug-go v0.0.4

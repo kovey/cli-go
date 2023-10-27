@@ -47,7 +47,7 @@ func NewApp(name string) *App {
 	return a
 }
 
-func (a *App) flag(name string, def interface{}, t Type, comment string) {
+func (a *App) flag(name string, def any, t Type, comment string) {
 	_, ok := a.flags[name]
 	if ok {
 		debug.Warn("flag[%s] is registed", name)
@@ -57,7 +57,7 @@ func (a *App) flag(name string, def interface{}, t Type, comment string) {
 	a.flags[name] = &Flag{name: name, def: def, t: t, comment: comment}
 }
 
-func (a *App) Flag(name string, def interface{}, t Type, comment string) {
+func (a *App) Flag(name string, def any, t Type, comment string) {
 	if name == "s" {
 		debug.Warn("flag[%s] is used by sinal module", name)
 		return
