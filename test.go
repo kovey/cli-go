@@ -22,6 +22,7 @@ func (s *serv) Init(a app.AppInterface) error {
 
 func (s *serv) Run(a app.AppInterface) error {
 	debug.Info("[%s] run", a.Name())
+	//panic("run error")
 	return nil
 }
 
@@ -48,6 +49,7 @@ func testCallBack() {
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
 	cli.Action = func(a app.AppInterface) error {
+		//panic("action is panic")
 		debug.Info("app is running")
 		debug.Warn("this is warning")
 		debug.Erro("this is error")
@@ -77,6 +79,9 @@ func testCallBack() {
 	}
 	cli.Show = func(table *gui.Table) {
 		table.Add("custom")
+	}
+	cli.Panic = func(ai app.AppInterface) {
+		debug.Info("app[%s] is panic", ai.Name())
 	}
 
 	cli.Flag("config", "", app.TYPE_STRING, "config path")

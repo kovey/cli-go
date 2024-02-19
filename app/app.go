@@ -28,6 +28,7 @@ type App struct {
 	Action     func(AppInterface) error
 	Reload     func(AppInterface) error
 	Stop       func(AppInterface) error
+	Panic      func(AppInterface)
 	Show       func(*gui.Table)
 	PidFile    func(AppInterface) string
 	flags      map[string]*Flag
@@ -227,16 +228,37 @@ func (a *App) Run() error {
 	debug.Info("app[%s] run, pid[%s]", a.name, a.PidString())
 
 	startTime = time.Now()
-	if a.serv != nil {
-		err = a.serv.Run(a)
-	} else {
-		err = a.Action(a)
-	}
+	err = a._run()
 	if !a.isStop {
 		a.sigChan <- os.Interrupt
 	}
 	a.wait.Wait()
 	return err
+}
+
+func (a *App) _run() error {
+	defer func() {
+		err := recover()
+		if err == nil {
+			return
+		}
+
+		if a.serv != nil {
+			a.serv.Panic(a)
+		} else {
+			if a.Panic != nil {
+				a.Panic(a)
+			}
+		}
+
+		run.Panic(err)
+	}()
+
+	if a.serv != nil {
+		return a.serv.Run(a)
+	}
+
+	return a.Action(a)
 }
 
 func (a *App) listen() {

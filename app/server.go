@@ -8,6 +8,7 @@ type ServInterface interface {
 	Run(AppInterface) error
 	Shutdown(AppInterface) error
 	Reload(AppInterface) error
+	Panic(AppInterface)
 }
 
 type ServBase struct {
@@ -21,4 +22,8 @@ func (s *ServBase) Flag(AppInterface) error {
 func (s *ServBase) Reload(AppInterface) error {
 	debug.Info("run reload")
 	return nil
+}
+
+func (s *ServBase) Panic(a AppInterface) {
+	debug.Info("app[%s] is panic", a.Name())
 }
