@@ -22,6 +22,7 @@ type AppInterface interface {
 	Name() string
 	SetDebugLevel(t debug.DebugType)
 	Flag(name string, def any, t Type, comment string)
+	Arg(index int, t Type) (*Flag, error)
 }
 
 type App struct {
@@ -83,6 +84,34 @@ func (a *App) Get(name string) (*Flag, error) {
 	f, ok := a.flags[name]
 	if !ok {
 		return nil, fmt.Errorf("[%s] is not exists", name)
+	}
+
+	return f, nil
+}
+
+func (a *App) Arg(index int, t Type) (*Flag, error) {
+	arg := flag.Arg(index)
+	if arg == "" {
+		return nil, fmt.Errorf("arg[%d] not exists", index)
+	}
+
+	f := &Flag{t: t}
+	switch f.t {
+	case TYPE_BOOL:
+		val, err := strconv.ParseBool(arg)
+		if err != nil {
+			return nil, err
+		}
+
+		f.value = &val
+	case TYPE_INT:
+		val, err := strconv.Atoi(arg)
+		if err != nil {
+			return nil, err
+		}
+		f.value = &val
+	case TYPE_STRING:
+		f.value = &arg
 	}
 
 	return f, nil
