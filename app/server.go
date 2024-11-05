@@ -1,6 +1,12 @@
 package app
 
-import "github.com/kovey/debug-go/debug"
+import (
+	"flag"
+	"fmt"
+	"os"
+
+	"github.com/kovey/debug-go/debug"
+)
 
 type ServInterface interface {
 	Flag(AppInterface) error
@@ -9,6 +15,7 @@ type ServInterface interface {
 	Shutdown(AppInterface) error
 	Reload(AppInterface) error
 	Panic(AppInterface)
+	Usage()
 }
 
 type ServBase struct {
@@ -26,4 +33,9 @@ func (s *ServBase) Reload(AppInterface) error {
 
 func (s *ServBase) Panic(a AppInterface) {
 	debug.Info("app[%s] is panic", a.Name())
+}
+
+func (s *ServBase) Usage() {
+	fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+	flag.PrintDefaults()
 }

@@ -58,6 +58,7 @@ func NewApp(name string) *App {
 
 func (a *App) SetServ(serv ServInterface) {
 	a.serv = serv
+	flag.Usage = serv.Usage
 }
 
 func (a *App) flag(name string, def any, t Type, comment string) {

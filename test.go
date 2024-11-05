@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/kovey/cli-go/app"
 	"github.com/kovey/debug-go/debug"
 )
@@ -12,6 +14,16 @@ func main() {
 
 type serv struct {
 	*app.ServBase
+}
+
+func (s *serv) Usage() {
+	fmt.Println(`
+Usage: 
+	test <command> [arguments]
+The commands are:
+	test
+Use "migrate help <command>" for more information about a command.
+	`)
 }
 
 func (s *serv) Init(a app.AppInterface) error {
