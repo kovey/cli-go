@@ -17,6 +17,9 @@ type serv struct {
 
 func (s *serv) Init(a app.AppInterface) error {
 	debug.Info("[%s] init", a.Name())
+	if f, err := a.Arg(0, app.TYPE_INT); err == nil {
+		debug.Info("arg 1: %d", f.Int())
+	}
 	return nil
 }
 

@@ -112,6 +112,8 @@ func (a *App) Arg(index int, t Type) (*Flag, error) {
 		f.value = &val
 	case TYPE_STRING:
 		f.value = &arg
+	default:
+		return nil, fmt.Errorf("unknown type: %d", t)
 	}
 
 	return f, nil
