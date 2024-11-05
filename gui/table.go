@@ -20,6 +20,11 @@ func (t *Table) addRow() {
 	t.rows = append(t.rows, row)
 }
 
+func (t *Table) AddRow(row *Row) {
+	row.index = len(t.rows)
+	t.rows = append(t.rows, row)
+}
+
 func (t *Table) AddColor(index int, text string, color color.Color) {
 	if index > len(t.rows) {
 		return
