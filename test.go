@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kovey/cli-go/app"
-	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/debug-go/debug"
 )
 
@@ -79,9 +78,6 @@ func testCallBack() {
 	cli.Stop = func(a app.AppInterface) error {
 		debug.Info("app is stop")
 		return nil
-	}
-	cli.Show = func(table *gui.Table) {
-		table.Add("custom")
 	}
 	cli.Panic = func(ai app.AppInterface) {
 		debug.Info("app[%s] is panic", ai.Name())

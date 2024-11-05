@@ -27,6 +27,14 @@ func (t *Table) Add(index int, text string) {
 	t.rows[index].Add(text)
 }
 
+func (t *Table) AddInt(index, data int) {
+	t.Add(index, fmt.Sprintf("%d", data))
+}
+
+func (t *Table) AddAny(index int, data any) {
+	t.Add(index, fmt.Sprintf("%v", data))
+}
+
 func (t *Table) adjust() {
 	if t.isAdjust {
 		return
