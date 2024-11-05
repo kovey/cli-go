@@ -2,6 +2,8 @@ package gui
 
 import (
 	"fmt"
+
+	"github.com/kovey/debug-go/color"
 )
 
 type Column struct {
@@ -20,10 +22,17 @@ type Column struct {
 	p         Position
 	upPrev    string
 	downPrev  string
+	color     color.Color
 }
 
 func NewColumn(data string, p Position) *Column {
 	r := &Column{Data: data, p: p}
+	r.init()
+	return r
+}
+
+func NewColumnBy(data string, p Position, color color.Color) *Column {
+	r := &Column{Data: data, p: p, color: color}
 	r.init()
 	return r
 }
@@ -138,5 +147,24 @@ func (r *Column) DownBorder() string {
 }
 
 func (r *Column) Text() string {
-	return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, r.Data, r.suff, r.right)
+	switch r.color {
+	case color.Color_Blue:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.Blue(r.Data), r.suff, r.right)
+	case color.Color_Cyan:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.Cyan(r.Data), r.suff, r.right)
+	case color.Color_Green:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.Green(r.Data), r.suff, r.right)
+	case color.Color_Magenta:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.Magenta(r.Data), r.suff, r.right)
+	case color.Color_Red:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.Red(r.Data), r.suff, r.right)
+	case color.Color_White:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.White(r.Data), r.suff, r.right)
+	case color.Color_Yellow:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, color.Yellow(r.Data), r.suff, r.right)
+	case color.Color_None:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, r.Data, r.suff, r.right)
+	default:
+		return fmt.Sprintf("%s%s%s%s%s", r.left, r.prev, r.Data, r.suff, r.right)
+	}
 }

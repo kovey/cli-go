@@ -1,6 +1,10 @@
 package gui
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/kovey/debug-go/color"
+)
 
 type Row struct {
 	columns []*Column
@@ -12,23 +16,27 @@ func NewRow(index int) *Row {
 	return r
 }
 
-func (r *Row) Add(data string) {
+func (r *Row) AddColor(data string, color color.Color) {
 	switch r.index {
 	case 0:
 		if len(r.columns) == 0 {
-			r.columns = append(r.columns, NewColumn(data, Position_Left_Up))
+			r.columns = append(r.columns, NewColumnBy(data, Position_Left_Up, color))
 			return
 		}
 
-		r.columns = append(r.columns, NewColumn(data, Position_Up))
+		r.columns = append(r.columns, NewColumnBy(data, Position_Up, color))
 	default:
 		if len(r.columns) == 0 {
-			r.columns = append(r.columns, NewColumn(data, Position_Left))
+			r.columns = append(r.columns, NewColumnBy(data, Position_Left, color))
 			return
 		}
 
-		r.columns = append(r.columns, NewColumn(data, Position_Center))
+		r.columns = append(r.columns, NewColumnBy(data, Position_Center, color))
 	}
+}
+
+func (r *Row) Add(data string) {
+	r.AddColor(data, color.Color_None)
 }
 
 func (r *Row) Final(rowCount int) {

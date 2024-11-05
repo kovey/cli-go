@@ -1,6 +1,10 @@
 package gui
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/kovey/debug-go/color"
+)
 
 type Table struct {
 	rows     []*Row
@@ -16,7 +20,7 @@ func (t *Table) addRow() {
 	t.rows = append(t.rows, row)
 }
 
-func (t *Table) Add(index int, text string) {
+func (t *Table) AddColor(index int, text string, color color.Color) {
 	if index > len(t.rows) {
 		return
 	}
@@ -24,7 +28,11 @@ func (t *Table) Add(index int, text string) {
 		t.addRow()
 	}
 
-	t.rows[index].Add(text)
+	t.rows[index].AddColor(text, color)
+}
+
+func (t *Table) Add(index int, text string) {
+	t.AddColor(index, text, color.Color_None)
 }
 
 func (t *Table) AddInt(index, data int) {
