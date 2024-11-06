@@ -113,7 +113,7 @@ func (c *CommandLine) Parse(args []string) {
 	for {
 		end, err := c.parseOne()
 		if err != nil {
-			fmt.Println(err)
+			debug.Erro(err.Error())
 			Usage()
 			os.Exit(1)
 			return
@@ -128,6 +128,10 @@ func (c *CommandLine) Parse(args []string) {
 }
 
 func (c *CommandLine) parseOne() (bool, error) {
+	if len(c.args) == 0 {
+		return true, nil
+	}
+
 	if c.hasFlag {
 		if len(c.args[0]) < 2 || c.args[0][0] != '-' {
 			return false, fmt.Errorf("arg[%s] format error", c.args[0])

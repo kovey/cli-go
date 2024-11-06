@@ -25,6 +25,7 @@ type AppInterface interface {
 	FlagNonValueLong(name string, comment string)
 	FlagNonValue(name string, comment string)
 	Arg(index int, t Type) (*Flag, error)
+	UsageWhenErr()
 }
 
 type App struct {
@@ -42,6 +43,7 @@ type App struct {
 	name       string
 	isShowInfo bool
 	serv       ServInterface
+	showUsage  bool
 }
 
 func NewApp(name string) *App {
@@ -55,6 +57,10 @@ func NewApp(name string) *App {
 	}
 	_commanLine.Flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
 	return a
+}
+
+func (a *App) UsageWhenErr() {
+	a.showUsage = true
 }
 
 func (a *App) SetServ(serv ServInterface) {
@@ -258,6 +264,10 @@ func (a *App) Run() error {
 		a.sigChan <- os.Interrupt
 	}
 	a.wait.Wait()
+	if err != nil && a.showUsage {
+		Usage()
+	}
+
 	return err
 }
 
