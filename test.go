@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/kovey/cli-go/app"
 	"github.com/kovey/debug-go/debug"
 )
@@ -16,26 +14,41 @@ type serv struct {
 	*app.ServBase
 }
 
+/**
 func (s *serv) Usage() {
 	fmt.Println(`
-Usage: 
+Usage:
 	test <command> [arguments]
 The commands are:
 	test
 Use "migrate help <command>" for more information about a command.
 	`)
 }
+**/
+
+func (s *serv) Flag(a app.AppInterface) error {
+	a.FlagLong("to", "test", app.TYPE_STRING, "test")
+	a.FlagNonValue("v", "show version")
+	a.FlagNonValueLong("version", "show version")
+	return nil
+}
 
 func (s *serv) Init(a app.AppInterface) error {
 	debug.Info("[%s] init", a.Name())
-	if f, err := a.Arg(0, app.TYPE_INT); err == nil {
-		debug.Info("arg 1: %d", f.Int())
-	}
 	return nil
 }
 
 func (s *serv) Run(a app.AppInterface) error {
 	debug.Info("[%s] run", a.Name())
+	if test, err := a.Get("to"); err == nil {
+		debug.Info("test: %s", test.String())
+	}
+	if f, err := a.Arg(0, app.TYPE_STRING); err == nil {
+		debug.Info("arg 0: %s", f.String())
+	}
+	if f, err := a.Arg(1, app.TYPE_STRING); err == nil {
+		debug.Info("arg 1: %s", f.String())
+	}
 	//panic("run error")
 	return nil
 }

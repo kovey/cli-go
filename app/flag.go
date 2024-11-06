@@ -1,6 +1,9 @@
 package app
 
-import "flag"
+import (
+	"fmt"
+	"strconv"
+)
 
 type Type int
 
@@ -11,58 +14,92 @@ const (
 )
 
 type Flag struct {
-	name    string
-	t       Type
-	def     any
-	comment string
-	value   any
-}
-
-func (f *Flag) parse() {
-	switch f.t {
-	case TYPE_INT:
-		val, ok := f.def.(int)
-		if !ok {
-			break
-		}
-
-		f.value = flag.Int(f.name, val, f.comment)
-	case TYPE_BOOL:
-		val, ok := f.def.(bool)
-		if !ok {
-			break
-		}
-		f.value = flag.Bool(f.name, val, f.comment)
-	case TYPE_STRING:
-		val, ok := f.def.(string)
-		if !ok {
-			break
-		}
-
-		f.value = flag.String(f.name, val, f.comment)
-	}
+	name     string
+	t        Type
+	def      any
+	comment  string
+	value    string
+	has      bool
+	hasValue bool
+	isShort  bool
 }
 
 func (f *Flag) String() string {
+	if !f.hasValue {
+		panic(fmt.Sprintf("%s has not value", f.name))
+	}
+
 	if f.t != TYPE_STRING {
 		return ""
 	}
 
-	return *(f.value.(*string))
+	if !f.has {
+		return f.def.(string)
+	}
+
+	return f.value
 }
 
 func (f *Flag) Int() int {
+	if !f.hasValue {
+		panic(fmt.Sprintf("%s has not value", f.name))
+	}
+
 	if f.t != TYPE_INT {
 		return 0
 	}
 
-	return *(f.value.(*int))
+	if !f.has {
+		return f.def.(int)
+	}
+
+	tmp, err := strconv.Atoi(f.value)
+	if err != nil {
+		panic(err)
+	}
+
+	return tmp
 }
 
 func (f *Flag) Bool() bool {
+	if !f.hasValue {
+		panic(fmt.Sprintf("%s has not value", f.name))
+	}
+
 	if f.t != TYPE_BOOL {
 		return false
 	}
 
-	return *(f.value.(*bool))
+	if !f.has {
+		return f.def.(bool)
+	}
+
+	tmp, err := strconv.ParseBool(f.value)
+	if err != nil {
+		panic(err)
+	}
+
+	return tmp
+}
+
+func (f *Flag) print(maxLen int) {
+	name := fmt.Sprintf("-%s", f.name)
+	if !f.isShort {
+		name = fmt.Sprintf("--%s", f.name)
+	}
+
+	sub := maxLen - len(name)
+	for i := 0; i < sub; i++ {
+		name += " "
+	}
+
+	if f.hasValue {
+		fmt.Printf(`
+	%s  %s, default: %v
+`, name, f.comment, f.def)
+		return
+	}
+	fmt.Printf(`
+	%s  %s
+`, name, f.comment)
 }

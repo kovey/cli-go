@@ -1,7 +1,6 @@
 package app
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -36,6 +35,6 @@ func (s *ServBase) Panic(a AppInterface) {
 }
 
 func (s *ServBase) Usage() {
-	fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
-	flag.PrintDefaults()
+	fmt.Printf("Usage of %s \n", os.Args[0])
+	PrintDefaults()
 }

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,6 +21,9 @@ type AppInterface interface {
 	Name() string
 	SetDebugLevel(t debug.DebugType)
 	Flag(name string, def any, t Type, comment string)
+	FlagLong(name string, def any, t Type, comment string)
+	FlagNonValueLong(name string, comment string)
+	FlagNonValue(name string, comment string)
 	Arg(index int, t Type) (*Flag, error)
 }
 
@@ -31,7 +33,6 @@ type App struct {
 	Stop       func(AppInterface) error
 	Panic      func(AppInterface)
 	PidFile    func(AppInterface) string
-	flags      map[string]*Flag
 	ticker     *time.Ticker
 	pid        int
 	sigChan    chan os.Signal
@@ -49,26 +50,43 @@ func NewApp(name string) *App {
 	}
 
 	a := &App{
-		flags: make(map[string]*Flag), sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false,
+		sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false,
 		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name, ticker: time.NewTicker(1 * time.Minute),
 	}
-	a.flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
+	_commanLine.Flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
 	return a
 }
 
 func (a *App) SetServ(serv ServInterface) {
 	a.serv = serv
-	flag.Usage = serv.Usage
+	Usage = serv.Usage
 }
 
-func (a *App) flag(name string, def any, t Type, comment string) {
-	_, ok := a.flags[name]
-	if ok {
-		debug.Warn("flag[%s] is registed", name)
+func (a *App) FlagNonValueLong(name string, comment string) {
+	if len(name) < 2 {
+		debug.Warn("flag[%s] is too short", name)
 		return
 	}
 
-	a.flags[name] = &Flag{name: name, def: def, t: t, comment: comment}
+	_commanLine.FlagNonValueLong(name, comment)
+}
+
+func (a *App) FlagNonValue(name string, comment string) {
+	if name == "s" {
+		debug.Warn("flag[%s] is used by sinal module", name)
+		return
+	}
+
+	_commanLine.FlagNonValue(name, comment)
+}
+
+func (a *App) FlagLong(name string, def any, t Type, comment string) {
+	if len(name) < 2 {
+		debug.Warn("flag[%s] is too short", name)
+		return
+	}
+
+	_commanLine.FlagLong(name, def, t, comment)
 }
 
 func (a *App) Flag(name string, def any, t Type, comment string) {
@@ -77,12 +95,12 @@ func (a *App) Flag(name string, def any, t Type, comment string) {
 		return
 	}
 
-	a.flag(name, def, t, comment)
+	_commanLine.Flag(name, def, t, comment)
 }
 
 func (a *App) Get(name string) (*Flag, error) {
-	f, ok := a.flags[name]
-	if !ok {
+	f := _commanLine.Get(name)
+	if f == nil {
 		return nil, fmt.Errorf("[%s] is not exists", name)
 	}
 
@@ -90,32 +108,12 @@ func (a *App) Get(name string) (*Flag, error) {
 }
 
 func (a *App) Arg(index int, t Type) (*Flag, error) {
-	arg := flag.Arg(index)
-	if arg == "" {
-		return nil, fmt.Errorf("arg[%d] not exists", index)
+	f := _commanLine.Arg(index)
+	if f == nil {
+		return nil, fmt.Errorf("[%d] is not exists", index)
 	}
 
-	f := &Flag{t: t}
-	switch f.t {
-	case TYPE_BOOL:
-		val, err := strconv.ParseBool(arg)
-		if err != nil {
-			return nil, err
-		}
-
-		f.value = &val
-	case TYPE_INT:
-		val, err := strconv.Atoi(arg)
-		if err != nil {
-			return nil, err
-		}
-		f.value = &val
-	case TYPE_STRING:
-		f.value = &arg
-	default:
-		return nil, fmt.Errorf("unknown type: %d", t)
-	}
-
+	f.t = t
 	return f, nil
 }
 
@@ -128,11 +126,7 @@ func (a *App) PidString() string {
 }
 
 func (a *App) parse() {
-	for _, flag := range a.flags {
-		flag.parse()
-	}
-
-	flag.Parse()
+	_commanLine.Parse(os.Args[1:])
 }
 
 func (a *App) getPid() int {
