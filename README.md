@@ -71,17 +71,18 @@
 ### Env
     .env file
 #### Examples
+```ini
 ; comment
 -- comment
 // comment
-\# comment
+# comment
 
 APP_NAME    = Test
 APP_URL     = http://baidu.com?ab=test&cd=dev
 APP_STATUS  = 1
 APP_OPEN    = true
 APP_PRICE   = 10.05
-
+```
 
 #### Get
 ```golang
