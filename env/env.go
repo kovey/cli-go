@@ -12,9 +12,19 @@ import (
 
 const (
 	trim_set = " \r\n\t"
+	Default  = ".env"
 )
 
 var Err_Key_Not_Found = errors.New("key not found")
+
+func HasEnv() bool {
+	stat, err := os.Stat(Default)
+	if err != nil {
+		return false
+	}
+
+	return !stat.IsDir()
+}
 
 func Load(path string) error {
 	file, err := os.Open(path)

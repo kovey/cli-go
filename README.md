@@ -68,3 +68,25 @@
    go run main.go -s stop # stop app
    go run main.go -s info # open or close show app info
 ```
+### Env
+    .env file
+#### Examples
+; comment
+-- comment
+// comment
+\# comment
+
+APP_NAME    = Test
+APP_URL     = http://baidu.com?ab=test&cd=dev
+APP_STATUS  = 1
+APP_OPEN    = true
+APP_PRICE   = 10.05
+
+
+#### Get
+```golang
+    env.Get("APP_NAME")
+    env.GetInt("APP_STATUS")
+    env.GetFloat("APP_PRICE")
+    env.GetBool("APP_OPEN")
+```

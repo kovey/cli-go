@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/kovey/cli-go/env"
 	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
@@ -46,7 +47,22 @@ type App struct {
 	showUsage  bool
 }
 
+func loadEnv() {
+	if !env.HasEnv() {
+		return
+	}
+
+	if err := env.Load(".env"); err != nil {
+		debug.Erro(err.Error())
+	}
+}
+
 func NewApp(name string) *App {
+	loadEnv()
+	if n, err := env.Get("APP_NAME"); err == nil {
+		name = n
+	}
+
 	if len(name) == 0 {
 		panic("app name is empty")
 	}
