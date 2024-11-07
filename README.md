@@ -70,7 +70,7 @@
 ```
 ### Env
     .env file
-#### Examples
+#### Conent of .env file
 ```ini
 ; comment
 -- comment
