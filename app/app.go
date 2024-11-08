@@ -61,7 +61,10 @@ func loadEnv(now time.Time) {
 func NewApp(name string) *App {
 	loadEnv(time.Now())
 	if len(name) == 0 {
-		panic("app name is empty")
+		name = os.Getenv(env.APP_NAME)
+		if len(name) == 0 {
+			panic("app name is empty")
+		}
 	}
 
 	a := &App{
