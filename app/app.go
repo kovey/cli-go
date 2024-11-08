@@ -45,26 +45,27 @@ type App struct {
 	isShowInfo bool
 	serv       ServInterface
 	showUsage  bool
+	check      *time.Ticker
 }
 
-func loadEnv() {
+func loadEnv(now time.Time) {
 	if !env.HasEnv() {
 		return
 	}
 
-	if err := env.Load(".env"); err != nil {
+	if err := env.LoadDefault(now); err != nil {
 		debug.Erro(err.Error())
 	}
 }
 
 func NewApp(name string) *App {
-	loadEnv()
+	loadEnv(time.Now())
 	if len(name) == 0 {
 		panic("app name is empty")
 	}
 
 	a := &App{
-		sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false,
+		sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false, check: time.NewTicker(1 * time.Second),
 		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name, ticker: time.NewTicker(1 * time.Minute),
 	}
 
@@ -318,9 +319,12 @@ func (a *App) _run() error {
 func (a *App) listen() {
 	defer a.wait.Done()
 	defer a.ticker.Stop()
+	defer a.check.Stop()
 
 	for {
 		select {
+		case now := <-a.check.C:
+			loadEnv(now)
 		case _, ok := <-a.ticker.C:
 			if !ok {
 				a.isStop = true

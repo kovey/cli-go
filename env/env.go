@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 )
 
 var Err_Key_Not_Found = errors.New("key not found")
+var loadTime int64
 
 func HasEnv() bool {
 	stat, err := os.Stat(Default)
@@ -23,7 +25,20 @@ func HasEnv() bool {
 		return false
 	}
 
-	return !stat.IsDir()
+	if stat.IsDir() {
+		return false
+	}
+
+	return stat.ModTime().Unix() > loadTime
+}
+
+func LoadDefault(now time.Time) error {
+	if err := Load(Default); err != nil {
+		return err
+	}
+
+	loadTime = now.Unix()
+	return nil
 }
 
 func Load(path string) error {
@@ -32,6 +47,7 @@ func Load(path string) error {
 		return err
 	}
 
+	defer file.Close()
 	reader := bufio.NewReader(file)
 	for {
 		line, err := reader.ReadString('\n')
