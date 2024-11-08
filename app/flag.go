@@ -24,6 +24,10 @@ type Flag struct {
 	isShort  bool
 }
 
+func (f *Flag) IsInput() bool {
+	return f.has
+}
+
 func (f *Flag) String() string {
 	if !f.hasValue {
 		panic(fmt.Sprintf("%s has not value", f.name))
