@@ -17,6 +17,10 @@ import (
 	"github.com/kovey/debug-go/run"
 )
 
+func init() {
+	loadEnv(time.Now())
+}
+
 type AppInterface interface {
 	Get(name string) (*Flag, error)
 	Name() string
@@ -59,7 +63,6 @@ func loadEnv(now time.Time) {
 }
 
 func NewApp(name string) *App {
-	loadEnv(time.Now())
 	if len(name) == 0 {
 		name = os.Getenv(env.APP_NAME)
 		if len(name) == 0 {
