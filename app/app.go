@@ -59,10 +59,6 @@ func loadEnv() {
 
 func NewApp(name string) *App {
 	loadEnv()
-	if n, err := env.Get("APP_NAME"); err == nil {
-		name = n
-	}
-
 	if len(name) == 0 {
 		panic("app name is empty")
 	}
@@ -70,6 +66,13 @@ func NewApp(name string) *App {
 	a := &App{
 		sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false,
 		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name, ticker: time.NewTicker(1 * time.Minute),
+	}
+
+	if dbl, err := env.Get(env.DEBUG_LEVEL); err == nil && len(dbl) > 0 {
+		a.SetDebugLevel(debug.DebugType(dbl))
+	}
+	if showFile, err := env.GetInt(env.DEBUG_SHOW_FILE); err == nil {
+		debug.SetFileLine(debug.FileLine(showFile))
 	}
 	_commanLine.Flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
 	return a
