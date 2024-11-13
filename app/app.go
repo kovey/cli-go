@@ -17,6 +17,10 @@ import (
 	"github.com/kovey/debug-go/run"
 )
 
+func init() {
+	loadEnv(time.Now())
+}
+
 type AppInterface interface {
 	Get(name string) (*Flag, error)
 	Name() string
@@ -45,31 +49,37 @@ type App struct {
 	isShowInfo bool
 	serv       ServInterface
 	showUsage  bool
+	check      *time.Ticker
 }
 
-func loadEnv() {
+func loadEnv(now time.Time) {
 	if !env.HasEnv() {
 		return
 	}
 
-	if err := env.Load(".env"); err != nil {
+	if err := env.LoadDefault(now); err != nil {
 		debug.Erro(err.Error())
 	}
 }
 
 func NewApp(name string) *App {
-	loadEnv()
-	if n, err := env.Get("APP_NAME"); err == nil {
-		name = n
-	}
-
 	if len(name) == 0 {
-		panic("app name is empty")
+		name = os.Getenv(env.APP_NAME)
+		if len(name) == 0 {
+			panic("app name is empty")
+		}
 	}
 
 	a := &App{
-		sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false,
+		sigChan: make(chan os.Signal, 1), isStop: false, isShowInfo: false, check: time.NewTicker(1 * time.Second),
 		wait: sync.WaitGroup{}, pidFile: util.RunDir() + "/" + name + ".pid", name: name, ticker: time.NewTicker(1 * time.Minute),
+	}
+
+	if dbl, err := env.Get(env.DEBUG_LEVEL); err == nil && len(dbl) > 0 {
+		a.SetDebugLevel(debug.DebugType(dbl))
+	}
+	if showFile, err := env.GetInt(env.DEBUG_SHOW_FILE); err == nil {
+		debug.SetFileLine(debug.FileLine(showFile))
 	}
 	_commanLine.Flag("s", "no", TYPE_STRING, "signal: reload|info|stop")
 	return a
@@ -315,9 +325,12 @@ func (a *App) _run() error {
 func (a *App) listen() {
 	defer a.wait.Done()
 	defer a.ticker.Stop()
+	defer a.check.Stop()
 
 	for {
 		select {
+		case now := <-a.check.C:
+			loadEnv(now)
 		case _, ok := <-a.ticker.C:
 			if !ok {
 				a.isStop = true

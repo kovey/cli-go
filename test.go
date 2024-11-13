@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/kovey/cli-go/app"
 	"github.com/kovey/debug-go/debug"
 )
@@ -49,6 +51,8 @@ func (s *serv) Run(a app.AppInterface) error {
 	if f, err := a.Arg(1, app.TYPE_STRING); err == nil {
 		debug.Info("arg 1: %s", f.String())
 	}
+
+	time.Sleep(1 * time.Minute)
 	//panic("run error")
 	return nil
 }
