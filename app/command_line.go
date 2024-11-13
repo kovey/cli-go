@@ -127,6 +127,78 @@ func (c *CommandLine) Parse(args []string) {
 	return
 }
 
+func (c *CommandLine) parseShort() (bool, error) {
+	name := strings.ReplaceAll(c.args[0], "-", "")
+	if name == "h" || name == "help" {
+		Usage()
+		os.Exit(0)
+	}
+
+	flag, ok := c.flags[name]
+	if !ok {
+		return false, fmt.Errorf("arg[%s] not defined", name)
+	}
+
+	var value = ""
+	if len(c.args) >= 2 && c.args[1][0] != '-' {
+		if !flag.hasValue {
+			return false, fmt.Errorf("arg[%s] has not value", c.args[0])
+		}
+
+		value = c.args[1]
+		c.args = c.args[2:]
+	} else {
+		if flag.hasValue {
+			return false, fmt.Errorf("arg[%s] has value", c.args[0])
+		}
+
+		c.args = c.args[1:]
+	}
+
+	c.flags[name].value = value
+	c.flags[name].has = true
+	c.hasFlag = true
+	return len(c.args) == 0, nil
+}
+
+func (c *CommandLine) parseLong() (bool, error) {
+	arg := strings.ReplaceAll(c.args[0], "-", "")
+	if arg == "h" || arg == "help" {
+		Usage()
+		os.Exit(0)
+	}
+	if !strings.Contains(arg, "=") {
+		flag, ok := c.flags[arg]
+		if !ok {
+			return false, fmt.Errorf("arg[%s] not defined", arg)
+		}
+
+		if flag.hasValue {
+			return false, fmt.Errorf("arg[%s] has value", arg)
+		}
+
+		c.flags[arg].has = true
+		c.args = c.args[1:]
+		c.hasFlag = true
+		return len(c.args) == 0, nil
+	}
+
+	info := strings.Split(arg, "=")
+	flag, ok := c.flags[info[0]]
+	if !ok {
+		return false, fmt.Errorf("arg[%s] not defined", info[0])
+	}
+	if !flag.hasValue {
+		return false, fmt.Errorf("arg[%s] has not value", c.args[0])
+	}
+
+	c.flags[info[0]].has = true
+	c.flags[info[0]].value = info[1]
+	c.args = c.args[1:]
+	c.hasFlag = true
+	return len(c.args) == 0, nil
+}
+
 func (c *CommandLine) parseOne() (bool, error) {
 	if len(c.args) == 0 {
 		return true, nil
@@ -143,75 +215,11 @@ func (c *CommandLine) parseOne() (bool, error) {
 	}
 
 	if c.args[0][0] == '-' && c.args[0][1] != '-' {
-		name := strings.ReplaceAll(c.args[0], "-", "")
-		if name == "h" || name == "help" {
-			Usage()
-			os.Exit(0)
-		}
-
-		flag, ok := c.flags[name]
-		if !ok {
-			return false, fmt.Errorf("arg[%s] not defined", name)
-		}
-
-		var value = ""
-		if len(c.args) >= 2 && c.args[1][0] != '-' {
-			if !flag.hasValue {
-				return false, fmt.Errorf("arg[%s] has not value", c.args[0])
-			}
-
-			value = c.args[1]
-			c.args = c.args[2:]
-		} else {
-			if flag.hasValue {
-				return false, fmt.Errorf("arg[%s] has value", c.args[0])
-			}
-
-			c.args = c.args[1:]
-		}
-
-		c.flags[name].value = value
-		c.flags[name].has = true
-		c.hasFlag = true
-		return len(c.args) == 0, nil
+		return c.parseShort()
 	}
 
 	if c.args[0][0] == '-' && c.args[0][1] == '-' {
-		arg := strings.ReplaceAll(c.args[0], "-", "")
-		if arg == "h" || arg == "help" {
-			Usage()
-			os.Exit(0)
-		}
-		if !strings.Contains(arg, "=") {
-			flag, ok := c.flags[arg]
-			if !ok {
-				return false, fmt.Errorf("arg[%s] not defined", arg)
-			}
-
-			if flag.hasValue {
-				return false, fmt.Errorf("arg[%s] has value", arg)
-			}
-
-			c.flags[arg].has = true
-			c.args = c.args[1:]
-			c.hasFlag = true
-			return len(c.args) == 0, nil
-		}
-
-		info := strings.Split(arg, "=")
-		flag, ok := c.flags[info[0]]
-		if !ok {
-			return false, fmt.Errorf("arg[%s] not defined", info[0])
-		}
-		if !flag.hasValue {
-			return false, fmt.Errorf("arg[%s] has not value", c.args[0])
-		}
-
-		c.flags[info[0]].has = true
-		c.flags[info[0]].value = info[1]
-		c.args = c.args[1:]
-		c.hasFlag = true
-		return len(c.args) == 0, nil
+		return c.parseLong()
 	}
 
 	c.others = append(c.others, &Flag{value: c.args[0], has: true, hasValue: true, name: c.args[0]})

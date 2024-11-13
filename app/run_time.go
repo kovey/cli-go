@@ -18,7 +18,7 @@ func GetRunTime() int64 {
 }
 
 func StartTimestamp() string {
-	return startTime.Format(util.GOLANG_BIRTHDAY)
+	return startTime.Format(time.DateTime)
 }
 
 func GetFormatRunTime() string {
