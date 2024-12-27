@@ -213,14 +213,15 @@ func (c *CommandLine) parseShort() (bool, error) {
 
 func (c *CommandLine) parseLong() (bool, error) {
 	arg := strings.TrimLeft(c.args[0], "--")
-	if err := c.checkLong(arg); err != nil {
-		return false, err
-	}
 	if arg == "h" || arg == "help" {
 		Usage()
 		os.Exit(0)
 	}
 	if !strings.Contains(arg, "=") {
+		if err := c.checkLong(arg); err != nil {
+			return false, err
+		}
+
 		flag, ok := c.flags[arg]
 		if !ok {
 			return false, fmt.Errorf("arg[%s] not defined", arg)
@@ -237,6 +238,9 @@ func (c *CommandLine) parseLong() (bool, error) {
 	}
 
 	info := strings.Split(arg, "=")
+	if err := c.checkLong(info[0]); err != nil {
+		return false, err
+	}
 	flag, ok := c.flags[info[0]]
 	if !ok {
 		return false, fmt.Errorf("arg[%s] not defined", info[0])
