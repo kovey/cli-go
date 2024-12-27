@@ -32,6 +32,7 @@ func (s *serv) Flag(a app.AppInterface) error {
 	a.FlagLong("to", "test", app.TYPE_STRING, "test")
 	a.FlagNonValue("v", "show version")
 	a.FlagNonValueLong("version", "show version")
+	a.FlagLong("to-user", "user", app.TYPE_STRING, "user")
 	return nil
 }
 
@@ -50,6 +51,9 @@ func (s *serv) Run(a app.AppInterface) error {
 	}
 	if f, err := a.Arg(1, app.TYPE_STRING); err == nil {
 		debug.Info("arg 1: %s", f.String())
+	}
+	if f, err := a.Get("to-user"); err == nil {
+		debug.Info("to-user: %s", f.String())
 	}
 
 	time.Sleep(1 * time.Minute)

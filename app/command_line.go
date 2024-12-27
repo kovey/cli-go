@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/kovey/debug-go/debug"
@@ -51,6 +52,10 @@ func (c *CommandLine) PrintDefaults() {
 }
 
 func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
+	if err := c.checkLong(name); err != nil {
+		debug.Erro(err.Error())
+		return
+	}
 	if _, ok := c.flags[name]; ok {
 		debug.Warn("flag[%s] is registed", name)
 		return
@@ -60,6 +65,11 @@ func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
 }
 
 func (c *CommandLine) Flag(name string, def any, t Type, comment string) {
+	if err := c.checkShort(name); err != nil {
+		debug.Erro(err.Error())
+		return
+	}
+
 	if _, ok := c.flags[name]; ok {
 		debug.Warn("flag[%s] is registed", name)
 		return
@@ -69,6 +79,11 @@ func (c *CommandLine) Flag(name string, def any, t Type, comment string) {
 }
 
 func (c *CommandLine) FlagNonValueLong(name string, comment string) {
+	if err := c.checkLong(name); err != nil {
+		debug.Erro(err.Error())
+		return
+	}
+
 	if _, ok := c.flags[name]; ok {
 		debug.Warn("flag[%s] is registed", name)
 		return
@@ -78,6 +93,11 @@ func (c *CommandLine) FlagNonValueLong(name string, comment string) {
 }
 
 func (c *CommandLine) FlagNonValue(name string, comment string) {
+	if err := c.checkShort(name); err != nil {
+		debug.Erro(err.Error())
+		return
+	}
+
 	if _, ok := c.flags[name]; ok {
 		debug.Warn("flag[%s] is registed", name)
 		return
@@ -127,8 +147,38 @@ func (c *CommandLine) Parse(args []string) {
 	return
 }
 
+func (c *CommandLine) checkShort(name string) error {
+	reg, err := regexp.Compile("^[a-zA-Z]+$")
+	if err != nil {
+		return err
+	}
+
+	if reg.Match([]byte(name)) {
+		return nil
+	}
+
+	return fmt.Errorf("expected short name[%s] is [a-zA-Z]", name)
+}
+
+func (c *CommandLine) checkLong(name string) error {
+	reg, err := regexp.Compile("^[a-zA-Z-]+[a-zA-Z]$")
+	if err != nil {
+		return err
+	}
+
+	if reg.Match([]byte(name)) {
+		return nil
+	}
+
+	return fmt.Errorf("expected long name[%s] is [a-zA-Z-]", name)
+}
+
 func (c *CommandLine) parseShort() (bool, error) {
-	name := strings.ReplaceAll(c.args[0], "-", "")
+	name := strings.TrimLeft(c.args[0], "-")
+	if err := c.checkShort(name); err != nil {
+		return false, err
+	}
+
 	if name == "h" || name == "help" {
 		Usage()
 		os.Exit(0)
@@ -162,7 +212,10 @@ func (c *CommandLine) parseShort() (bool, error) {
 }
 
 func (c *CommandLine) parseLong() (bool, error) {
-	arg := strings.ReplaceAll(c.args[0], "-", "")
+	arg := strings.TrimLeft(c.args[0], "--")
+	if err := c.checkLong(arg); err != nil {
+		return false, err
+	}
 	if arg == "h" || arg == "help" {
 		Usage()
 		os.Exit(0)
