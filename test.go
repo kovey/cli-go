@@ -57,7 +57,7 @@ func (s *serv) Run(a app.AppInterface) error {
 		debug.Info("to-user: %s", f.String())
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(30 * time.Second)
 	//panic("run error")
 	return nil
 }

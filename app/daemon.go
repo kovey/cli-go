@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -21,6 +22,7 @@ const (
 	ko_command_start         = "start"
 	ko_command_reload        = "reload"
 	ko_command_stop          = "stop"
+	ko_command_kill          = "kill"
 )
 
 type Daemon struct {
@@ -69,6 +71,7 @@ func NewDaemon(name string) *Daemon {
 	_commanLine.FlagArg("start", fmt.Sprintf("start app[%s]", name), 0)
 	_commanLine.FlagArg("reload", fmt.Sprintf("reload app[%s]", name), 0)
 	_commanLine.FlagArg("stop", fmt.Sprintf("stop app[%s]", name), 0)
+	_commanLine.FlagArg("kill", fmt.Sprintf("kill app[%s] with -9", name), 0)
 	_commanLine.FlagNonValueLong("daemon", fmt.Sprintf("run app[%s] with daemon mode", name))
 	return d
 }
@@ -87,11 +90,6 @@ func (d *Daemon) FlagNonValueLong(name string, comment string) {
 }
 
 func (d *Daemon) FlagNonValue(name string, comment string) {
-	if name == "s" {
-		debug.Warn("flag[%s] is used by sinal module", name)
-		return
-	}
-
 	_commanLine.FlagNonValue(name, comment)
 }
 
@@ -105,11 +103,6 @@ func (d *Daemon) FlagLong(name string, def any, t Type, comment string) {
 }
 
 func (d *Daemon) Flag(name string, def any, t Type, comment string) {
-	if name == "s" {
-		debug.Warn("flag[%s] is used by sinal module", name)
-		return
-	}
-
 	_commanLine.Flag(name, def, t, comment)
 }
 
@@ -137,7 +130,7 @@ func (d *Daemon) Pid() int {
 }
 
 func (d *Daemon) PidString() string {
-	return strconv.Itoa(d.pid)
+	return fmt.Sprintf("%d-%d", d.pid, d.childPid)
 }
 
 func (d *Daemon) getPid() int {
@@ -147,12 +140,33 @@ func (d *Daemon) getPid() int {
 		return -1
 	}
 
-	id, err := strconv.Atoi(string(pid))
+	pidInfo := strings.Split(string(pid), "-")
+	id, err := strconv.Atoi(pidInfo[0])
 	if err != nil {
 		return -1
 	}
 
 	return id
+}
+
+func (d *Daemon) getPidAndChildPid() []int {
+	d.pidFile = d.serv.PidFile(d)
+	pid, err := os.ReadFile(d.pidFile)
+	if err != nil {
+		return nil
+	}
+
+	pidInfo := strings.Split(string(pid), "-")
+	ids := make([]int, len(pidInfo))
+	for index, idInfo := range pidInfo {
+		id, err := strconv.Atoi(idInfo)
+		if err != nil {
+			return nil
+		}
+		ids[index] = id
+	}
+
+	return ids
 }
 
 func (d *Daemon) SetServ(serv ServInterface) {
@@ -177,6 +191,10 @@ func (d *Daemon) runChild() {
 		return
 	}
 
+	if err := os.WriteFile(d.pidFile, []byte(d.PidString()), 0644); err != nil {
+		debug.Erro("write pid file error: %s", err)
+	}
+
 	if err := d.cmd.Wait(); err != nil {
 		debug.Erro("wait child error: %s", err)
 		return
@@ -186,7 +204,7 @@ func (d *Daemon) runChild() {
 }
 
 func (d *Daemon) listen() {
-	signal.Notify(d.sig, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1)
+	signal.Notify(d.sig, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1, syscall.SIGKILL)
 	defer d.check.Stop()
 
 	for {
@@ -199,14 +217,14 @@ func (d *Daemon) listen() {
 					debug.Erro("sinal to app[%s] child[%d] failure, error: %s", d.name, d.childPid, err)
 				}
 				switch s {
-				case os.Interrupt, syscall.SIGTERM:
+				case os.Interrupt, syscall.SIGTERM, syscall.SIGKILL:
 					return
 				}
 			}
 
 			if d.serv != nil {
 				switch s {
-				case os.Interrupt, syscall.SIGTERM:
+				case os.Interrupt, syscall.SIGTERM, syscall.SIGKILL:
 					if err := d.serv.Shutdown(d); err != nil {
 						debug.Erro("app[%s] stop failure, error: %s", d.name, err)
 					}
@@ -285,10 +303,6 @@ func (d *Daemon) _run() error {
 		}
 	}()
 
-	if err := os.WriteFile(d.pidFile, []byte(d.PidString()), 0644); err != nil {
-		debug.Erro("write pid file error: %s", err)
-	}
-
 	debug.Info("app[%s] run, pid[%s]", d.name, d.PidString())
 	d.wait.Add(1)
 	go d.runChild()
@@ -315,6 +329,20 @@ func (d *Daemon) _stop() error {
 	return syscall.Kill(pid, syscall.SIGTERM)
 }
 
+func (d *Daemon) _kill() error {
+	pids := d.getPidAndChildPid()
+	if len(pids) < 1 {
+		return fmt.Errorf("app[%s] not running", d.name)
+	}
+
+	var err error
+	for _, pid := range pids {
+		err = syscall.Kill(pid, syscall.SIGKILL)
+	}
+
+	return err
+}
+
 func (d *Daemon) Run() error {
 	if d.serv == nil {
 		return fmt.Errorf("serv not init")
@@ -338,6 +366,8 @@ func (d *Daemon) Run() error {
 		return d._reload()
 	case ko_command_stop:
 		return d._stop()
+	case ko_command_kill:
+		return d._kill()
 	}
 
 	return nil
