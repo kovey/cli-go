@@ -42,5 +42,6 @@ func (s *ServBase) Panic(a AppInterface) {
 
 func (s *ServBase) Usage() {
 	fmt.Printf("Usage of %s \n", os.Args[0])
+	fmt.Println("	defaut is start.")
 	PrintDefaults()
 }

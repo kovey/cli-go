@@ -18,6 +18,9 @@ import (
 
 const (
 	Ko_Cli_Daemon_Background = "KO_CLI_DAEMON_BACKGROUND"
+	ko_command_start         = "start"
+	ko_command_reload        = "reload"
+	ko_command_stop          = "stop"
 )
 
 type Daemon struct {
@@ -325,15 +328,15 @@ func (d *Daemon) Run() error {
 	_commanLine.Parse(os.Args[1:])
 	f, err := d.Arg(0, TYPE_STRING)
 	if err != nil {
-		return fmt.Errorf("args must start|reload|stop")
+		f, _ = d.Get("start")
 	}
 
 	switch f.String() {
-	case "start":
+	case ko_command_start:
 		return d._run()
-	case "reload":
+	case ko_command_reload:
 		return d._reload()
-	case "stop":
+	case ko_command_stop:
 		return d._stop()
 	}
 
