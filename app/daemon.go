@@ -80,6 +80,15 @@ func (d *Daemon) UsageWhenErr() {
 	d.showUsage = true
 }
 
+func (d *Daemon) FlagArg(name string, comment string, index int) {
+	if len(name) < 2 {
+		debug.Warn("flag[%s] is too short", name)
+		return
+	}
+
+	_commanLine.FlagArg(name, comment, index)
+}
+
 func (d *Daemon) FlagNonValueLong(name string, comment string) {
 	if len(name) < 2 {
 		debug.Warn("flag[%s] is too short", name)

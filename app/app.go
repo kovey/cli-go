@@ -19,6 +19,7 @@ type AppInterface interface {
 	FlagLong(name string, def any, t Type, comment string)
 	FlagNonValueLong(name string, comment string)
 	FlagNonValue(name string, comment string)
+	FlagArg(name string, comment string, index int)
 	Arg(index int, t Type) (*Flag, error)
 	UsageWhenErr()
 }
