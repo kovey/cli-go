@@ -368,9 +368,9 @@ func (d *Daemon) Run() error {
 		return d._stop()
 	case ko_command_kill:
 		return d._kill()
+	default:
+		return d._run()
 	}
-
-	return nil
 }
 
 func (d *Daemon) doRun() error {
