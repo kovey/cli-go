@@ -22,6 +22,8 @@ type Flag struct {
 	has      bool
 	hasValue bool
 	isShort  bool
+	index    int
+	isArg    bool
 }
 
 func (f *Flag) IsInput() bool {
@@ -29,6 +31,10 @@ func (f *Flag) IsInput() bool {
 }
 
 func (f *Flag) String() string {
+	if f.isArg {
+		return f.name
+	}
+
 	if !f.hasValue {
 		panic(fmt.Sprintf("%s has not value", f.name))
 	}
@@ -88,7 +94,9 @@ func (f *Flag) Bool() bool {
 
 func (f *Flag) print(maxLen int) {
 	name := fmt.Sprintf("-%s", f.name)
-	if !f.isShort {
+	if f.isArg {
+		name = fmt.Sprintf("%s", f.name)
+	} else if !f.isShort {
 		name = fmt.Sprintf("--%s", f.name)
 	}
 

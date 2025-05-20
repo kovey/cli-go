@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
 )
 
@@ -15,14 +16,14 @@ type ServInterface interface {
 	Reload(AppInterface) error
 	Panic(AppInterface)
 	Usage()
-	NeedPid(AppInterface) bool
+	PidFile(AppInterface) string
 }
 
 type ServBase struct {
 }
 
-func (s *ServBase) NeedPid(AppInterface) bool {
-	return true
+func (s *ServBase) PidFile(a AppInterface) string {
+	return fmt.Sprintf("%s/%s.run.pid", util.RunDir(), a.Name())
 }
 
 func (s *ServBase) Flag(AppInterface) error {

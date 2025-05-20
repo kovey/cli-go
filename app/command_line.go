@@ -51,6 +51,20 @@ func (c *CommandLine) PrintDefaults() {
 	}
 }
 
+func (c *CommandLine) FlagArg(name, comment string, index int) {
+	if err := c.checkLong(name); err != nil {
+		debug.Erro(err.Error())
+		return
+	}
+
+	if _, ok := c.flags[name]; ok {
+		debug.Warn("flag[%s] is registed", name)
+		return
+	}
+	c.keys = append(c.keys, name)
+	c.flags[name] = &Flag{name: name, def: "", comment: comment, t: TYPE_STRING, hasValue: false, isShort: false, isArg: true}
+}
+
 func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
 	if err := c.checkLong(name); err != nil {
 		debug.Erro(err.Error())
@@ -224,7 +238,7 @@ func (c *CommandLine) parseLong() (bool, error) {
 
 		flag, ok := c.flags[arg]
 		if !ok {
-			return false, fmt.Errorf("arg[%s] not defined", arg)
+			return false, fmt.Errorf("arg[%s] not defined: %+v", arg, c.flags)
 		}
 
 		if flag.hasValue {
@@ -279,7 +293,13 @@ func (c *CommandLine) parseOne() (bool, error) {
 		return c.parseLong()
 	}
 
-	c.others = append(c.others, &Flag{value: c.args[0], has: true, hasValue: true, name: c.args[0]})
+	f, ok := c.flags[c.args[0]]
+	if !ok || f.index != len(c.others) {
+		return false, fmt.Errorf("arg[%s] not defined", c.args[0])
+	}
+
+	f.value = c.args[0]
+	c.others = append(c.others, f)
 	c.args = c.args[1:]
 	return len(c.args) == 0, nil
 }

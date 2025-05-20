@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/kovey/cli-go/app"
@@ -56,7 +57,7 @@ func (s *serv) Run(a app.AppInterface) error {
 		debug.Info("to-user: %s", f.String())
 	}
 
-	time.Sleep(1 * time.Minute)
+	time.Sleep(5 * time.Second)
 	//panic("run error")
 	return nil
 }
@@ -72,56 +73,15 @@ func (s *serv) Shutdown(a app.AppInterface) error {
 }
 
 func testServ() {
+	file, err := os.OpenFile("./test.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		panic(err)
+	}
+	debug.SetWriter(file)
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
 	cli.SetServ(&serv{})
 	if err := cli.Run(); err != nil {
-		debug.Erro(err.Error())
-	}
-}
-
-func testCallBack() {
-	cli := app.NewApp("test")
-	cli.SetDebugLevel(debug.Debug_Info)
-	cli.Action = func(a app.AppInterface) error {
-		//panic("action is panic")
-		debug.Info("app is running")
-		debug.Warn("this is warning")
-		debug.Erro("this is error")
-		path, err := a.Get("config")
-		if err != nil {
-			return err
-		}
-
-		count, err := a.Get("count")
-		if err != nil {
-			return err
-		}
-
-		debug.Info("config[%s]", path.String())
-		debug.Info("count[%d]", count.Int())
-		return nil
-	}
-
-	cli.Reload = func(a app.AppInterface) error {
-		debug.Info("app is reload")
-		return nil
-	}
-
-	cli.Stop = func(a app.AppInterface) error {
-		debug.Info("app is stop")
-		return nil
-	}
-	cli.Panic = func(ai app.AppInterface) {
-		debug.Info("app[%s] is panic", ai.Name())
-	}
-
-	cli.Flag("config", "", app.TYPE_STRING, "config path")
-	cli.Flag("count", 100, app.TYPE_INT, "reload count")
-	cli.Flag("count", 100, app.TYPE_INT, "reload count")
-	cli.Flag("s", "", app.TYPE_STRING, "signal")
-	err := cli.Run()
-	if err != nil {
 		debug.Erro(err.Error())
 	}
 }

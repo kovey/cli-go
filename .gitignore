@@ -1,2 +1,5 @@
 .DS_Store
 .env
+test
+test.log
+test.run.*
