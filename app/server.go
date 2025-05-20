@@ -15,9 +15,14 @@ type ServInterface interface {
 	Reload(AppInterface) error
 	Panic(AppInterface)
 	Usage()
+	NeedPid(AppInterface) bool
 }
 
 type ServBase struct {
+}
+
+func (s *ServBase) NeedPid(AppInterface) bool {
+	return true
 }
 
 func (s *ServBase) Flag(AppInterface) error {

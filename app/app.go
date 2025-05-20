@@ -251,8 +251,10 @@ func (a *App) Run() error {
 		a.pidFile = a.PidFile(a)
 	}
 
-	if util.IsFile(a.pidFile) {
-		return fmt.Errorf("app[%s] is running", a.name)
+	if a.serv == nil || a.serv.NeedPid(a) {
+		if util.IsFile(a.pidFile) {
+			return fmt.Errorf("app[%s] is running", a.name)
+		}
 	}
 
 	if a.serv == nil {
@@ -265,18 +267,19 @@ func (a *App) Run() error {
 		}
 	}
 
-	defer func() {
-		if a.pidFile != "" {
-			os.Remove(a.pidFile)
-		}
-		run.Panic(recover())
-	}()
-
 	a.pid = os.Getpid()
 
-	err := os.WriteFile(a.pidFile, []byte(a.PidString()), 0644)
-	if err != nil {
-		return err
+	if a.serv == nil || a.serv.NeedPid(a) {
+		defer func() {
+			if a.pidFile != "" {
+				os.Remove(a.pidFile)
+			}
+		}()
+
+		err := os.WriteFile(a.pidFile, []byte(a.PidString()), 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	signal.Notify(a.sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1)
@@ -285,7 +288,7 @@ func (a *App) Run() error {
 	debug.Info("app[%s] run, pid[%s]", a.name, a.PidString())
 
 	startTime = time.Now()
-	err = a._run()
+	err := a._run()
 	if !a.isStop {
 		a.sigChan <- os.Interrupt
 	}
