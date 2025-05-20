@@ -251,7 +251,8 @@ func (a *App) Run() error {
 		a.pidFile = a.PidFile(a)
 	}
 
-	if a.serv == nil || a.serv.NeedPid(a) {
+	needPid := a.serv == nil || a.serv.NeedPid(a)
+	if needPid {
 		if util.IsFile(a.pidFile) {
 			return fmt.Errorf("app[%s] is running", a.name)
 		}
@@ -269,7 +270,7 @@ func (a *App) Run() error {
 
 	a.pid = os.Getpid()
 
-	if a.serv == nil || a.serv.NeedPid(a) {
+	if needPid {
 		defer func() {
 			if a.pidFile != "" {
 				os.Remove(a.pidFile)
