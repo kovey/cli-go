@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
@@ -41,7 +40,5 @@ func (s *ServBase) Panic(a AppInterface) {
 }
 
 func (s *ServBase) Usage() {
-	fmt.Printf("Usage of %s \n", os.Args[0])
-	fmt.Println("	defaut is start.")
 	PrintDefaults()
 }

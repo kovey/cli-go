@@ -10,7 +10,6 @@ import (
 )
 
 var Usage = func() {
-	fmt.Printf("Usage of %s \n", os.Args[0])
 	PrintDefaults()
 }
 
@@ -286,7 +285,7 @@ func (c *CommandLine) parseOne() (bool, error) {
 	}
 
 	f, ok := c.flags[c.args[0]]
-	if !ok || f.index != len(c.others) {
+	if !ok {
 		return false, fmt.Errorf("arg[%s] not defined", c.args[0])
 	}
 
@@ -294,4 +293,22 @@ func (c *CommandLine) parseOne() (bool, error) {
 	c.others = append(c.others, f)
 	c.args = c.args[1:]
 	return len(c.args) == 0, nil
+}
+
+func (c *CommandLine) AllArgName() []string {
+	var res []string
+	for _, f := range c.others {
+		res = append(res, f.String())
+	}
+	return res
+}
+
+func (c *CommandLine) Help() {
+	argNames := c.AllArgName()
+	if len(argNames) == 1 {
+		c.help.Show()
+		return
+	}
+
+	c.help.Help(argNames[1:]...)
 }

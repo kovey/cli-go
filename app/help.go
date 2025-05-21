@@ -196,27 +196,29 @@ type Command struct {
 
 func (c *Command) HelpSub(appName, command string) {
 	if sub, ok := c.commands.commands[command]; ok {
-		sub.Help(fmt.Sprintf("%s %s", appName, c.Name))
+		sub.Help(fmt.Sprintf("%s %s", appName, c.Name), appName)
 	}
 }
 
-func (c *Command) Help(appName string) {
+func (c *Command) Help(commandPrefix, appName string) {
 	if !c.args.HasOptions() {
-		fmt.Printf(`
+		fmt.Printf(`"%s" command of %s help details information.
+
 Usage:
     %s %s %s
 %s
-		`, appName, c.Name, c.args.HelpTitle(), c.args.Format("        "))
+		`, c.Name, appName, commandPrefix, c.Name, c.args.HelpTitle(), c.args.Format("        "))
 		return
 	}
 
-	fmt.Printf(`
+	fmt.Printf(`"%s" command of %s help details information.
+
 Usage:
     %s %s %s [options]
 %s
 options
 %s
-		`, appName, c.Name, c.args.HelpTitle(), c.args.FormatSub("        ", true), c.args.FormatSub("    ", false))
+		`, c.Name, appName, commandPrefix, c.Name, c.args.HelpTitle(), c.args.FormatSub("        ", true), c.args.FormatSub("    ", false))
 }
 
 func (c *Command) AddArg(name, comment string, isShort, isRequired bool) {
@@ -297,11 +299,14 @@ func (h *Help) Help(commands ...string) {
 	var prefix []string
 	commMap := h.Commands
 	for _, command := range commands {
-		if sub, ok := commMap.commands[command]; ok {
-			last = sub
-			prefix = append(prefix, command)
-			commMap = sub.commands
+		sub, ok := commMap.commands[command]
+		if !ok {
+			break
 		}
+
+		last = sub
+		prefix = append(prefix, command)
+		commMap = sub.commands
 	}
 
 	if last == nil {
@@ -310,9 +315,9 @@ func (h *Help) Help(commands ...string) {
 
 	cs := prefix[:len(prefix)-1]
 	if len(cs) > 0 {
-		last.Help(fmt.Sprintf("%s %s", h.AppName, strings.Join(prefix[:len(prefix)-1], " ")))
+		last.Help(fmt.Sprintf("%s %s", h.AppName, strings.Join(prefix[:len(prefix)-1], " ")), h.AppName)
 		return
 	}
 
-	last.Help(h.AppName)
+	last.Help(h.AppName, h.AppName)
 }
