@@ -19,10 +19,12 @@ import (
 
 const (
 	Ko_Cli_Daemon_Background = "KO_CLI_DAEMON_BACKGROUND"
-	ko_command_start         = "start"
-	ko_command_reload        = "reload"
-	ko_command_stop          = "stop"
-	ko_command_kill          = "kill"
+	Ko_Command_Start         = "start"
+	Ko_Command_Reload        = "reload"
+	Ko_Command_Stop          = "stop"
+	Ko_Command_Kill          = "kill"
+	Ko_Command_Daemon        = "daemon"
+	ko_command_daemon_arg    = "--daemon"
 )
 
 type Daemon struct {
@@ -54,7 +56,7 @@ func NewDaemon(name string) *Daemon {
 		d.isBackground = ok
 	}
 	for _, arg := range os.Args {
-		if arg == "--daemon" && d.isBackground {
+		if arg == ko_command_daemon_arg && d.isBackground {
 			continue
 		}
 
@@ -68,11 +70,11 @@ func NewDaemon(name string) *Daemon {
 		debug.SetFileLine(debug.FileLine(showFile))
 	}
 
-	_commanLine.FlagArg("start", fmt.Sprintf("start app[%s]", name), 0)
-	_commanLine.FlagArg("reload", fmt.Sprintf("reload app[%s]", name), 0)
-	_commanLine.FlagArg("stop", fmt.Sprintf("stop app[%s]", name), 0)
-	_commanLine.FlagArg("kill", fmt.Sprintf("kill app[%s] with -9", name), 0)
-	_commanLine.FlagNonValueLong("daemon", fmt.Sprintf("run app[%s] with daemon mode", name))
+	_commanLine.FlagArg(Ko_Command_Start, fmt.Sprintf("start app[%s]", name), 0)
+	_commanLine.FlagArg(Ko_Command_Reload, fmt.Sprintf("reload app[%s]", name), 0)
+	_commanLine.FlagArg(Ko_Command_Stop, fmt.Sprintf("stop app[%s]", name), 0)
+	_commanLine.FlagArg(Ko_Command_Kill, fmt.Sprintf("kill app[%s] with -9", name), 0)
+	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode when run start command", name))
 	return d
 }
 
@@ -277,8 +279,12 @@ func (d *Daemon) runApp() error {
 	return nil
 }
 
-func (d *Daemon) _run() error {
-	if f := _commanLine.Get("daemon"); f == nil || !f.has {
+func (d *Daemon) _run(command string) error {
+	if command != Ko_Command_Start {
+		return d.runApp()
+	}
+
+	if f := _commanLine.Get(Ko_Command_Daemon); f == nil || !f.has {
 		return d.runApp()
 	}
 
@@ -363,22 +369,22 @@ func (d *Daemon) Run() error {
 	}
 
 	_commanLine.Parse(os.Args[1:])
-	f, err := d.Arg(0, TYPE_STRING)
-	if err != nil {
-		f, _ = d.Get("start")
+	method := Ko_Command_Start
+	if f, err := d.Arg(0, TYPE_STRING); err == nil {
+		method = f.String()
 	}
 
-	switch f.String() {
-	case ko_command_start:
-		return d._run()
-	case ko_command_reload:
+	switch method {
+	case Ko_Command_Start:
+		return d._run(method)
+	case Ko_Command_Reload:
 		return d._reload()
-	case ko_command_stop:
+	case Ko_Command_Stop:
 		return d._stop()
-	case ko_command_kill:
+	case Ko_Command_Kill:
 		return d._kill()
 	default:
-		return d._run()
+		return d._run(method)
 	}
 }
 
