@@ -25,6 +25,7 @@ const (
 	Ko_Command_Kill          = "kill"
 	Ko_Command_Daemon        = "daemon"
 	ko_command_daemon_arg    = "--daemon"
+	Ko_Command_Help          = "h"
 )
 
 type Daemon struct {
@@ -70,6 +71,9 @@ func NewDaemon(name string) *Daemon {
 		debug.SetFileLine(debug.FileLine(showFile))
 	}
 
+	_commanLine.help.AppName = name
+	_commanLine.help.Title = fmt.Sprintf("command line of %s", name)
+	_commanLine.FlagNonValue(Ko_Command_Help, fmt.Sprintf("show app[%s] command help", name))
 	_commanLine.FlagArg(Ko_Command_Start, fmt.Sprintf("start app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Reload, fmt.Sprintf("reload app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Stop, fmt.Sprintf("stop app[%s]", name), 0)

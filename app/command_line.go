@@ -27,28 +27,15 @@ type CommandLine struct {
 	isParsed bool
 	keys     []string
 	hasFlag  bool
+	help     *Help
 }
 
 func NewCommandLine() *CommandLine {
-	return &CommandLine{flags: make(map[string]*Flag)}
+	return &CommandLine{flags: make(map[string]*Flag), help: NewHelp("")}
 }
 
 func (c *CommandLine) PrintDefaults() {
-	maxLen := 0
-	for _, flag := range c.flags {
-		fLen := len(flag.name) + 1
-		if !flag.isShort {
-			fLen++
-		}
-
-		if fLen > maxLen {
-			maxLen = fLen
-		}
-	}
-
-	for _, key := range c.keys {
-		c.flags[key].print(maxLen)
-	}
+	c.help.Show()
 }
 
 func (c *CommandLine) FlagArg(name, comment string, index int) {
@@ -63,6 +50,7 @@ func (c *CommandLine) FlagArg(name, comment string, index int) {
 	}
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, def: "", comment: comment, t: TYPE_STRING, hasValue: false, isShort: false, isArg: true}
+	c.help.Commands.AddCommand(name, comment)
 }
 
 func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
@@ -76,6 +64,7 @@ func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
 	}
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, def: def, comment: comment, t: t, hasValue: true, isShort: false}
+	c.help.Args.Add(name, comment, false, false)
 }
 
 func (c *CommandLine) Flag(name string, def any, t Type, comment string) {
@@ -90,6 +79,7 @@ func (c *CommandLine) Flag(name string, def any, t Type, comment string) {
 	}
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, def: def, comment: comment, t: t, hasValue: true, isShort: true}
+	c.help.Args.Add(name, comment, true, false)
 }
 
 func (c *CommandLine) FlagNonValueLong(name string, comment string) {
@@ -104,6 +94,7 @@ func (c *CommandLine) FlagNonValueLong(name string, comment string) {
 	}
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, hasValue: false, isShort: false, comment: comment}
+	c.help.Args.Add(name, comment, false, false)
 }
 
 func (c *CommandLine) FlagNonValue(name string, comment string) {
@@ -119,6 +110,7 @@ func (c *CommandLine) FlagNonValue(name string, comment string) {
 
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, hasValue: false, isShort: true, comment: comment}
+	c.help.Args.Add(name, comment, true, false)
 }
 
 func (c *CommandLine) Arg(index int) *Flag {
