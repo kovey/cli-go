@@ -24,6 +24,15 @@ type Flag struct {
 	isShort  bool
 	index    int
 	isArg    bool
+	children *Flags
+}
+
+func (f *Flag) AddChild(flag *Flag) {
+	if f.children == nil {
+		f.children = NewFlags()
+	}
+
+	f.children.Add(flag)
 }
 
 func (f *Flag) IsInput() bool {
@@ -90,28 +99,4 @@ func (f *Flag) Bool() bool {
 	}
 
 	return tmp
-}
-
-func (f *Flag) print(maxLen int) {
-	name := fmt.Sprintf("-%s", f.name)
-	if f.isArg {
-		name = fmt.Sprintf("%s", f.name)
-	} else if !f.isShort {
-		name = fmt.Sprintf("--%s", f.name)
-	}
-
-	sub := maxLen - len(name)
-	for i := 0; i < sub; i++ {
-		name += " "
-	}
-
-	if f.hasValue {
-		fmt.Printf(`
-	%s  %s, default: %v
-`, name, f.comment, f.def)
-		return
-	}
-	fmt.Printf(`
-	%s  %s
-`, name, f.comment)
 }

@@ -24,101 +24,103 @@ func GetHelp() *Help {
 }
 
 type CommandLine struct {
-	flags    map[string]*Flag
+	flags    *Flags
 	others   []*Flag
 	args     []string
 	isParsed bool
-	keys     []string
 	hasFlag  bool
 	help     *Help
 }
 
 func NewCommandLine() *CommandLine {
-	return &CommandLine{flags: make(map[string]*Flag), help: NewHelp("")}
+	return &CommandLine{flags: NewFlags(), help: NewHelp("")}
 }
 
 func (c *CommandLine) PrintDefaults() {
 	c.help.Show()
 }
 
-func (c *CommandLine) FlagArg(name, comment string, index int) {
+func (c *CommandLine) _flag(name, comment string, def any, t Type, index int, hasValue, isShort, isArg bool, parents ...string) {
+	var parent *Flag
+	if len(parents) > 0 {
+		parent = c.flags.Get(parents...)
+		if parent == nil {
+			debug.Warn("parent not found: %s", name)
+			return
+		}
+
+		if parent.children != nil && parent.children.Has(name) {
+			debug.Warn("flag[%s] is registed", name)
+			return
+		}
+
+		parent.AddChild(&Flag{name: name, def: def, comment: comment, t: t, index: index, hasValue: hasValue, isShort: isShort, isArg: isArg})
+		pCmd := c.help.Get(parents...)
+		if isArg {
+			pCmd.AddCommand(name, comment)
+		} else {
+			pCmd.AddArg(name, comment, isShort, false)
+		}
+	} else {
+		if c.flags.Has(name) {
+			debug.Warn("flag[%s] is registed", name)
+			return
+		}
+		c.flags.Add(&Flag{name: name, def: def, comment: comment, t: t, index: index, hasValue: hasValue, isShort: isShort, isArg: isArg})
+		if isArg {
+			cmd := c.help.Commands.AddCommand(name, comment)
+			if name == Ko_Command_Start {
+				cmd.AddArg(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", c.help.AppName), false, false)
+			}
+		} else {
+			c.help.Args.Add(name, comment, false, false)
+		}
+	}
+}
+
+func (c *CommandLine) FlagArg(name, comment string, index int, parents ...string) {
 	if err := c.checkLong(name); err != nil {
 		debug.Erro(err.Error())
 		return
 	}
 
-	if _, ok := c.flags[name]; ok {
-		debug.Warn("flag[%s] is registed", name)
-		return
-	}
-	c.keys = append(c.keys, name)
-	c.flags[name] = &Flag{name: name, def: "", comment: comment, t: TYPE_STRING, hasValue: false, isShort: false, isArg: true}
-	cmd := c.help.Commands.AddCommand(name, comment)
-	if name == Ko_Command_Start {
-		cmd.AddArg(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", c.help.AppName), false, false)
-	}
+	c._flag(name, comment, "", TYPE_STRING, index, false, false, true, parents...)
 }
 
-func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
+func (c *CommandLine) FlagLong(name string, def any, t Type, comment string, parents ...string) {
 	if err := c.checkLong(name); err != nil {
 		debug.Erro(err.Error())
 		return
 	}
-	if _, ok := c.flags[name]; ok {
-		debug.Warn("flag[%s] is registed", name)
-		return
-	}
-	c.keys = append(c.keys, name)
-	c.flags[name] = &Flag{name: name, def: def, comment: comment, t: t, hasValue: true, isShort: false}
-	c.help.Args.Add(name, comment, false, false)
+
+	c._flag(name, comment, def, t, 0, true, false, false, parents...)
 }
 
-func (c *CommandLine) Flag(name string, def any, t Type, comment string) {
+func (c *CommandLine) Flag(name string, def any, t Type, comment string, parents ...string) {
 	if err := c.checkShort(name); err != nil {
 		debug.Erro(err.Error())
 		return
 	}
 
-	if _, ok := c.flags[name]; ok {
-		debug.Warn("flag[%s] is registed", name)
-		return
-	}
-	c.keys = append(c.keys, name)
-	c.flags[name] = &Flag{name: name, def: def, comment: comment, t: t, hasValue: true, isShort: true}
-	c.help.Args.Add(name, comment, true, false)
+	c._flag(name, comment, def, t, 0, true, true, false, parents...)
 }
 
-func (c *CommandLine) FlagNonValueLong(name string, comment string) {
+func (c *CommandLine) FlagNonValueLong(name string, comment string, parents ...string) {
 	if err := c.checkLong(name); err != nil {
 		debug.Erro(err.Error())
 		return
 	}
 
-	if _, ok := c.flags[name]; ok {
-		debug.Warn("flag[%s] is registed", name)
-		return
-	}
-	c.keys = append(c.keys, name)
-	c.flags[name] = &Flag{name: name, hasValue: false, isShort: false, comment: comment}
-	if name != Ko_Command_Daemon {
-		c.help.Args.Add(name, comment, false, false)
-	}
+	c._flag(name, comment, "", TYPE_STRING, 0, false, false, false, parents...)
 }
 
-func (c *CommandLine) FlagNonValue(name string, comment string) {
+func (c *CommandLine) FlagNonValue(name string, comment string, parents ...string) {
 	if err := c.checkShort(name); err != nil {
 		debug.Erro(err.Error())
 		return
 	}
 
-	if _, ok := c.flags[name]; ok {
-		debug.Warn("flag[%s] is registed", name)
-		return
-	}
-
-	c.keys = append(c.keys, name)
-	c.flags[name] = &Flag{name: name, hasValue: false, isShort: true, comment: comment}
-	c.help.Args.Add(name, comment, true, false)
+	c._flag(name, comment, "", TYPE_STRING, 0, false, true, false, parents...)
 }
 
 func (c *CommandLine) Arg(index int) *Flag {
@@ -129,8 +131,8 @@ func (c *CommandLine) Arg(index int) *Flag {
 	return c.others[index]
 }
 
-func (c *CommandLine) Get(name string) *Flag {
-	return c.flags[name]
+func (c *CommandLine) Get(names ...string) *Flag {
+	return c.flags.Get(names...)
 }
 
 func (c *CommandLine) Args() []*Flag {
@@ -198,8 +200,9 @@ func (c *CommandLine) parseShort() (bool, error) {
 		os.Exit(0)
 	}
 
-	flag, ok := c.flags[name]
-	if !ok {
+	commands := append(c.AllArgName(), name)
+	flag := c.flags.Get(commands...)
+	if flag == nil {
 		return false, fmt.Errorf("arg[%s] not defined", name)
 	}
 
@@ -219,8 +222,8 @@ func (c *CommandLine) parseShort() (bool, error) {
 		c.args = c.args[1:]
 	}
 
-	c.flags[name].value = value
-	c.flags[name].has = true
+	flag.value = value
+	flag.has = true
 	c.hasFlag = true
 	return len(c.args) == 0, nil
 }
@@ -236,8 +239,9 @@ func (c *CommandLine) parseLong() (bool, error) {
 			return false, err
 		}
 
-		flag, ok := c.flags[arg]
-		if !ok {
+		commands := append(c.AllArgName(), arg)
+		flag := c.flags.Get(commands...)
+		if flag == nil {
 			return false, fmt.Errorf("arg[%s] not defined: %+v", arg, c.flags)
 		}
 
@@ -245,7 +249,7 @@ func (c *CommandLine) parseLong() (bool, error) {
 			return false, fmt.Errorf("arg[%s] has value", arg)
 		}
 
-		c.flags[arg].has = true
+		flag.has = true
 		c.args = c.args[1:]
 		c.hasFlag = true
 		return len(c.args) == 0, nil
@@ -255,16 +259,17 @@ func (c *CommandLine) parseLong() (bool, error) {
 	if err := c.checkLong(info[0]); err != nil {
 		return false, err
 	}
-	flag, ok := c.flags[info[0]]
-	if !ok {
+	commands := append(c.AllArgName(), info[0])
+	flag := c.flags.Get(commands...)
+	if flag == nil {
 		return false, fmt.Errorf("arg[%s] not defined", info[0])
 	}
 	if !flag.hasValue {
 		return false, fmt.Errorf("arg[%s] has not value", c.args[0])
 	}
 
-	c.flags[info[0]].has = true
-	c.flags[info[0]].value = info[1]
+	flag.has = true
+	flag.value = info[1]
 	c.args = c.args[1:]
 	c.hasFlag = true
 	return len(c.args) == 0, nil
@@ -293,13 +298,14 @@ func (c *CommandLine) parseOne() (bool, error) {
 		return c.parseLong()
 	}
 
-	f, ok := c.flags[c.args[0]]
-	if !ok {
+	commands := append(c.AllArgName(), c.args[0])
+	flag := c.flags.Get(commands...)
+	if flag == nil {
 		return false, fmt.Errorf("arg[%s] not defined", c.args[0])
 	}
 
-	f.value = c.args[0]
-	c.others = append(c.others, f)
+	flag.value = c.args[0]
+	c.others = append(c.others, flag)
 	c.args = c.args[1:]
 	return len(c.args) == 0, nil
 }

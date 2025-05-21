@@ -337,3 +337,19 @@ func (h *Help) Help(commands ...string) {
 
 	last.Help(h.AppName, h.AppName)
 }
+
+func (h *Help) Get(commands ...string) *Command {
+	var last *Command
+	commMap := h.Commands
+	for _, command := range commands {
+		sub, ok := commMap.commands[command]
+		if !ok {
+			break
+		}
+
+		last = sub
+		commMap = sub.commands
+	}
+
+	return last
+}

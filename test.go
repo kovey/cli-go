@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"time"
 
 	"github.com/kovey/cli-go/app"
@@ -73,11 +72,13 @@ func (s *serv) Shutdown(a app.AppInterface) error {
 }
 
 func testServ() {
+	/**
 	file, err := os.OpenFile("./test.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
 	debug.SetWriter(file)
+	**/
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
 	cli.SetServ(&serv{})
