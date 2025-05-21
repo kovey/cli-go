@@ -5,20 +5,6 @@ import (
 	"strings"
 )
 
-/**
-	fmt.Printf(`%s command lines.
-
-Usage:
-	%s <command> [arguments]
-The commands are:
-	create  craete config .env file
-	start   start app
-	reload  reload app
-	stop    stop app
-	kill	kill app use -9 signal
-Use "ksql help <command>" for more information about a command.
-**/
-
 type Arg struct {
 	Name       string
 	Comment    string
@@ -86,6 +72,16 @@ func (a *Args) HelpTitle() string {
 		}
 	}
 	return strings.Join(res, " ")
+}
+
+func (a *Args) HasRequired() bool {
+	for _, name := range a.argNames {
+		if a.args[name].IsRequired {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (a *Args) HasOptions() bool {
@@ -202,16 +198,26 @@ func (c *Command) HelpSub(appName, command string) {
 
 func (c *Command) Help(commandPrefix, appName string) {
 	if !c.args.HasOptions() {
-		fmt.Printf(`"%s" command of %s help details information.
+		if c.args.HasRequired() {
+			fmt.Printf(`"%s" command of %s help details information.
 
 Usage:
     %s %s %s
 %s
 		`, c.Name, appName, commandPrefix, c.Name, c.args.HelpTitle(), c.args.Format("        "))
+			return
+		}
+		fmt.Printf(`"%s" command of %s help details information.
+
+Usage:
+    %s %s
+%s
+		`, c.Name, appName, commandPrefix, c.Name, c.args.Format("        "))
 		return
 	}
 
-	fmt.Printf(`"%s" command of %s help details information.
+	if c.args.HasRequired() {
+		fmt.Printf(`"%s" command of %s help details information.
 
 Usage:
     %s %s %s [options]
@@ -219,6 +225,16 @@ Usage:
 options
 %s
 		`, c.Name, appName, commandPrefix, c.Name, c.args.HelpTitle(), c.args.FormatSub("        ", true), c.args.FormatSub("    ", false))
+		return
+	}
+	fmt.Printf(`"%s" command of %s help details information.
+
+Usage:
+    %s %s [options]
+%s
+options
+%s
+		`, c.Name, appName, commandPrefix, c.Name, c.args.FormatSub("        ", true), c.args.FormatSub("    ", false))
 }
 
 func (c *Command) AddArg(name, comment string, isShort, isRequired bool) {

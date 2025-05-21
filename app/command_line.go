@@ -49,7 +49,10 @@ func (c *CommandLine) FlagArg(name, comment string, index int) {
 	}
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, def: "", comment: comment, t: TYPE_STRING, hasValue: false, isShort: false, isArg: true}
-	c.help.Commands.AddCommand(name, comment)
+	cmd := c.help.Commands.AddCommand(name, comment)
+	if name == Ko_Command_Start {
+		cmd.AddArg(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", c.help.AppName), false, false)
+	}
 }
 
 func (c *CommandLine) FlagLong(name string, def any, t Type, comment string) {
@@ -93,7 +96,9 @@ func (c *CommandLine) FlagNonValueLong(name string, comment string) {
 	}
 	c.keys = append(c.keys, name)
 	c.flags[name] = &Flag{name: name, hasValue: false, isShort: false, comment: comment}
-	c.help.Args.Add(name, comment, false, false)
+	if name != Ko_Command_Daemon {
+		c.help.Args.Add(name, comment, false, false)
+	}
 }
 
 func (c *CommandLine) FlagNonValue(name string, comment string) {
