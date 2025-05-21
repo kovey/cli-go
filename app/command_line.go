@@ -19,6 +19,10 @@ func PrintDefaults() {
 	_commanLine.PrintDefaults()
 }
 
+func GetHelp() *Help {
+	return _commanLine.help
+}
+
 type CommandLine struct {
 	flags    map[string]*Flag
 	others   []*Flag
