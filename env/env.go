@@ -19,6 +19,19 @@ const (
 var Err_Key_Not_Found = errors.New("key not found")
 var loadTime int64
 
+func CheckDefault() bool {
+	stat, err := os.Stat(Default)
+	if err != nil {
+		return false
+	}
+
+	if stat.IsDir() {
+		return false
+	}
+
+	return true
+}
+
 func HasEnv() bool {
 	stat, err := os.Stat(Default)
 	if err != nil {
