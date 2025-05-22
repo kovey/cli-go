@@ -394,7 +394,7 @@ func (d *Daemon) Run() error {
 		_commanLine.Help()
 		return nil
 	default:
-		return d._run(method)
+		return d._run(_commanLine.AllArgName()...)
 	}
 }
 
