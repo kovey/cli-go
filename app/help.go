@@ -10,6 +10,7 @@ type Arg struct {
 	Comment    string
 	IsShort    bool
 	IsRequired bool
+	Default    string
 }
 
 func (a *Arg) HelpName() string {
@@ -29,11 +30,30 @@ func (a *Arg) NameLen() int {
 }
 
 func (a *Arg) Format(firstSpace, middleSpace string) string {
+	var builder strings.Builder
+	builder.WriteString(firstSpace)
 	if a.IsShort {
-		return fmt.Sprintf("%s-%s%s%s", firstSpace, a.Name, middleSpace, a.Comment)
+		builder.WriteString("-")
+	} else {
+		builder.WriteString("--")
 	}
 
-	return fmt.Sprintf("%s--%s%s%s", firstSpace, a.Name, middleSpace, a.Comment)
+	builder.WriteString(a.Name)
+	if len(a.Comment) > 0 || len(a.Default) > 0 {
+		builder.WriteString(middleSpace)
+	}
+
+	if len(a.Comment) > 0 {
+		builder.WriteString(a.Comment)
+		builder.WriteString(",")
+	}
+
+	if len(a.Default) > 0 {
+		builder.WriteString("default: ")
+		builder.WriteString(a.Default)
+	}
+
+	return strings.Trim(builder.String(), ",")
 }
 
 type Args struct {
@@ -117,7 +137,7 @@ func (a *Args) HasOptions() bool {
 	return false
 }
 
-func (a *Args) Add(name, comment string, isShort, isRequired bool) {
+func (a *Args) Add(name, comment string, isShort bool, def any) {
 	if _, ok := a.args[name]; !ok {
 		a.argNames = append(a.argNames, name)
 		a.args[name] = &Arg{}
@@ -126,7 +146,10 @@ func (a *Args) Add(name, comment string, isShort, isRequired bool) {
 	a.args[name].Comment = comment
 	a.args[name].Name = name
 	a.args[name].IsShort = isShort
-	a.args[name].IsRequired = isRequired
+	a.args[name].IsRequired = def == nil
+	if def != nil {
+		a.args[name].Default = fmt.Sprintf("%v", def)
+	}
 }
 
 func (a *Args) FormatSub(space string, isRequired bool) string {
@@ -269,8 +292,8 @@ func (c *Command) Help(commandPrefix, appName string) {
 	fmt.Println(builder.String())
 }
 
-func (c *Command) AddArg(name, comment string, isShort, isRequired bool) {
-	c.args.Add(name, comment, isShort, isRequired)
+func (c *Command) AddArg(name, comment string, isShort bool, def any) {
+	c.args.Add(name, comment, isShort, def)
 }
 
 func (c *Command) AddCommand(name, comment string) *Command {

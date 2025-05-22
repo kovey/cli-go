@@ -59,7 +59,7 @@ func (c *CommandLine) _flag(name, comment string, def any, t Type, index int, ha
 		if isArg {
 			pCmd.AddCommand(name, comment)
 		} else {
-			pCmd.AddArg(name, comment, isShort, def == nil)
+			pCmd.AddArg(name, comment, isShort, def)
 		}
 	} else {
 		if c.flags.Has(name) {
@@ -70,7 +70,7 @@ func (c *CommandLine) _flag(name, comment string, def any, t Type, index int, ha
 		if isArg {
 			c.help.Commands.AddCommand(name, comment)
 		} else {
-			c.help.Args.Add(name, comment, isShort, def == nil)
+			c.help.Args.Add(name, comment, isShort, def)
 		}
 	}
 }
