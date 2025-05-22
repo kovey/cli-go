@@ -8,6 +8,10 @@ func NewFlags() *Flags {
 	return &Flags{flags: make(map[string]*Flag)}
 }
 
+func (f *Flags) Clean() {
+	f.flags = make(map[string]*Flag)
+}
+
 func (f *Flags) Add(flag *Flag) {
 	if _, ok := f.flags[flag.name]; !ok {
 		f.flags[flag.name] = flag

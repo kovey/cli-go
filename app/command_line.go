@@ -36,6 +36,11 @@ func NewCommandLine() *CommandLine {
 	return &CommandLine{flags: NewFlags(), help: NewHelp("")}
 }
 
+func (c *CommandLine) CleanDefaults() {
+	c.flags.Clean()
+	c.help.Clean()
+}
+
 func (c *CommandLine) PrintDefaults() {
 	c.help.Show()
 }

@@ -65,6 +65,11 @@ func NewArgs() *Args {
 	return &Args{args: make(map[string]*Arg)}
 }
 
+func (a *Args) Clean() {
+	a.argNames = nil
+	a.args = make(map[string]*Arg)
+}
+
 func (a *Args) subMaxLen(isRequired bool) int {
 	maxLen := 0
 	for _, arg := range a.args {
@@ -182,6 +187,11 @@ type Commands struct {
 
 func NewCommands() *Commands {
 	return &Commands{commands: make(map[string]*Command)}
+}
+
+func (c *Commands) Clean() {
+	c.commandNames = nil
+	c.commands = make(map[string]*Command)
 }
 
 func (c *Commands) MaxLen() int {
@@ -317,6 +327,11 @@ type Help struct {
 
 func NewHelp(appName string) *Help {
 	return &Help{AppName: appName, Commands: NewCommands(), Args: NewArgs()}
+}
+
+func (h *Help) Clean() {
+	h.Commands.Clean()
+	h.Args.Clean()
 }
 
 func getSpace(maxLen, curLen int) string {

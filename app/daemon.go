@@ -85,6 +85,10 @@ func NewDaemon(name string) *Daemon {
 	return d
 }
 
+func (d *Daemon) CleanCommandLine() {
+	_commanLine.CleanDefaults()
+}
+
 func (d *Daemon) UsageWhenErr() {
 	d.showUsage = true
 }

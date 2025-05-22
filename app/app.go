@@ -22,6 +22,7 @@ type AppInterface interface {
 	FlagArg(name string, comment string, parents ...string)
 	Arg(index int, t Type) (*Flag, error)
 	UsageWhenErr()
+	CleanCommandLine()
 }
 
 type App struct {
