@@ -32,10 +32,13 @@ func (s *serv) Flag(a app.AppInterface) error {
 	a.FlagArg("create", "create config")
 	a.FlagArg("build", "build config", "create")
 	a.FlagArg("make", "make config", "create", "build")
-	a.FlagLong("to", "test", app.TYPE_STRING, "test", "create", "build")
+	a.FlagLong("to", nil, app.TYPE_STRING, "test", "create", "build")
+	a.FlagLong("from", nil, app.TYPE_STRING, "from path", "create", "build")
 	a.FlagNonValue("v", "show version", "create")
 	a.FlagNonValueLong("version", "show version", "create", "build")
 	a.FlagLong("to-user", "user", app.TYPE_STRING, "user", "create", "build", "make")
+	a.FlagLong("path", nil, app.TYPE_STRING, "config path")
+	a.FlagLong("name", nil, app.TYPE_STRING, "name")
 	return nil
 }
 

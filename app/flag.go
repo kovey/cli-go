@@ -53,6 +53,9 @@ func (f *Flag) String() string {
 	}
 
 	if !f.has {
+		if f.def == nil {
+			panic(fmt.Sprintf("%s not input value", f.name))
+		}
 		return f.def.(string)
 	}
 
@@ -69,6 +72,10 @@ func (f *Flag) Int() int {
 	}
 
 	if !f.has {
+		if f.def == nil {
+			panic(fmt.Sprintf("%s not input value", f.name))
+		}
+
 		return f.def.(int)
 	}
 
@@ -90,6 +97,10 @@ func (f *Flag) Bool() bool {
 	}
 
 	if !f.has {
+		if f.def == nil {
+			panic(fmt.Sprintf("%s not input value", f.name))
+		}
+
 		return f.def.(bool)
 	}
 

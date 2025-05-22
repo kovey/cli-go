@@ -45,6 +45,29 @@ func NewArgs() *Args {
 	return &Args{args: make(map[string]*Arg)}
 }
 
+func (a *Args) subMaxLen(isRequired bool) int {
+	maxLen := 0
+	for _, arg := range a.args {
+		if arg.IsRequired != isRequired {
+			continue
+		}
+
+		if arg.IsShort {
+			if len(arg.Name)+1 > maxLen {
+				maxLen = len(arg.Name) + 1
+			}
+
+			continue
+		}
+
+		if len(arg.Name)+2 > maxLen {
+			maxLen = len(arg.Name) + 2
+		}
+	}
+
+	return maxLen
+}
+
 func (a *Args) MaxLen() int {
 	maxLen := 0
 	for _, arg := range a.args {
@@ -107,7 +130,7 @@ func (a *Args) Add(name, comment string, isShort, isRequired bool) {
 }
 
 func (a *Args) FormatSub(space string, isRequired bool) string {
-	maxLen := a.MaxLen()
+	maxLen := a.subMaxLen(isRequired)
 	var res []string
 	for _, name := range a.argNames {
 		if a.args[name].IsRequired != isRequired {
@@ -209,11 +232,6 @@ func (c *Command) Help(commandPrefix, appName string) {
 	builder.WriteString(fmt.Sprintf(` command of %s help details information.`, appName))
 	builder.WriteString("\r\n\r\nUsage:\r\n    ")
 	builder.WriteString(fmt.Sprintf("%s %s", commandPrefix, c.Name))
-	cms := c.commands.Format(c.commands.MaxLen())
-	if len(cms) > 0 {
-		builder.WriteString(" <command> [arguments]")
-	}
-
 	if c.args.HasRequired() {
 		builder.WriteString(" ")
 		builder.WriteString(c.args.HelpTitle())
@@ -223,12 +241,12 @@ func (c *Command) Help(commandPrefix, appName string) {
 		builder.WriteString(" [options]")
 	}
 
-	builder.WriteString("\r\n\r\n")
+	cms := c.commands.Format(c.commands.MaxLen())
 	if len(cms) > 0 {
-		builder.WriteString("The commands are:\r\n")
-		builder.WriteString(c.commands.Format(c.args.MaxLen()))
-		builder.WriteString("\r\n\r\n")
+		builder.WriteString(" <command> [arguments]")
 	}
+
+	builder.WriteString("\r\n\r\n")
 	if c.args.HasRequired() {
 		builder.WriteString(c.args.FormatSub("        ", true))
 		builder.WriteString("\r\n\r\n")
@@ -236,6 +254,12 @@ func (c *Command) Help(commandPrefix, appName string) {
 	if c.args.HasOptions() {
 		builder.WriteString("The options are:\r\n")
 		builder.WriteString(c.args.FormatSub("    ", false))
+		builder.WriteString("\r\n\r\n")
+	}
+
+	if len(cms) > 0 {
+		builder.WriteString("The commands are:\r\n")
+		builder.WriteString(cms)
 		builder.WriteString("\r\n\r\n")
 	}
 	if len(cms) > 0 {
@@ -286,24 +310,31 @@ func (h *Help) Show() {
 	builder.WriteString(h.Title)
 	builder.WriteString(".\r\n\r\nUsage:\r\n    ")
 	builder.WriteString(h.AppName)
+	if h.Args.HasRequired() {
+		builder.WriteString(" ")
+		builder.WriteString(h.Args.HelpTitle())
+	}
+	if h.Args.HasOptions() {
+		builder.WriteString(" [options]")
+	}
 	if len(h.Commands.commands) > 0 {
 		builder.WriteString(" <command> [arguments]")
 	}
-	if len(h.Args.argNames) > 0 {
-		builder.WriteString(" [options]")
-	}
 	builder.WriteString("\r\n\r\n")
+	if h.Args.HasRequired() {
+		builder.WriteString(h.Args.FormatSub("    ", true))
+		builder.WriteString("\r\n\r\n")
+	}
+	if h.Args.HasOptions() {
+		builder.WriteString("The options are:\r\n")
+		builder.WriteString(h.Args.FormatSub("    ", false))
+		builder.WriteString("\r\n\r\n")
+	}
 	if len(h.Commands.commands) > 0 {
 		builder.WriteString("The commands are:\r\n")
 		builder.WriteString(h.Commands.Format(h.Commands.MaxLen()))
 		builder.WriteString("\r\n\r\n")
 	}
-	if len(h.Args.argNames) > 0 {
-		builder.WriteString("The options are:\r\n")
-		builder.WriteString(h.Args.Format("    "))
-		builder.WriteString("\r\n\r\n")
-	}
-
 	if len(h.Commands.commands) > 0 {
 		builder.WriteString(fmt.Sprintf(`Use "%s help <command>" for more information about a command.`, h.AppName))
 	}
