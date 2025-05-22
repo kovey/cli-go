@@ -286,12 +286,8 @@ func (d *Daemon) runApp() error {
 	return nil
 }
 
-func (d *Daemon) _run(command string) error {
-	if command != Ko_Command_Start {
-		return d.runApp()
-	}
-
-	if f := _commanLine.Get(Ko_Command_Daemon); f == nil || !f.has {
+func (d *Daemon) _run(commands ...string) error {
+	if f := _commanLine.Get(append(commands, Ko_Command_Daemon)...); f == nil || !f.has {
 		return d.runApp()
 	}
 

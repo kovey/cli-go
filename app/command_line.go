@@ -239,7 +239,7 @@ func (c *CommandLine) parseLong() (bool, error) {
 		commands := append(c.AllArgName(), arg)
 		flag := c.flags.Get(commands...)
 		if flag == nil {
-			return false, fmt.Errorf("arg[%s] not defined: %+v", arg, c.flags)
+			return false, fmt.Errorf("arg[%s] not defined", arg)
 		}
 
 		if flag.hasValue {
