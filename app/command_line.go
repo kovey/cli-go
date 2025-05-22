@@ -68,12 +68,9 @@ func (c *CommandLine) _flag(name, comment string, def any, t Type, index int, ha
 		}
 		c.flags.Add(&Flag{name: name, def: def, comment: comment, t: t, index: index, hasValue: hasValue, isShort: isShort, isArg: isArg})
 		if isArg {
-			cmd := c.help.Commands.AddCommand(name, comment)
-			if name == Ko_Command_Start {
-				cmd.AddArg(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", c.help.AppName), false, false)
-			}
+			c.help.Commands.AddCommand(name, comment)
 		} else {
-			c.help.Args.Add(name, comment, false, false)
+			c.help.Args.Add(name, comment, isShort, false)
 		}
 	}
 }
@@ -304,8 +301,17 @@ func (c *CommandLine) parseOne() (bool, error) {
 		return false, fmt.Errorf("arg[%s] not defined", c.args[0])
 	}
 
-	flag.value = c.args[0]
-	c.others = append(c.others, flag)
+	if c.args[0] == Ko_Command_Help {
+		if c.args[0] == flag.name {
+			flag.value = c.args[0]
+			c.others = append(c.others, flag)
+		} else {
+			c.others = append(c.others, &Flag{name: c.args[0], value: c.args[0], def: c.args[0], t: TYPE_STRING, isArg: true})
+		}
+	} else {
+		flag.value = c.args[0]
+		c.others = append(c.others, flag)
+	}
 	c.args = c.args[1:]
 	return len(c.args) == 0, nil
 }
@@ -318,12 +324,29 @@ func (c *CommandLine) AllArgName() []string {
 	return res
 }
 
+func (c *CommandLine) hasHelp() bool {
+	for _, other := range c.others {
+		if other.name == Ko_Command_Help {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *CommandLine) Help() {
-	argNames := c.AllArgName()
-	if len(argNames) == 1 {
+	var argNames []string
+	for _, name := range c.AllArgName() {
+		if name == Ko_Command_Help {
+			continue
+		}
+
+		argNames = append(argNames, name)
+	}
+	if len(argNames) == 0 {
 		c.help.Show()
 		return
 	}
 
-	c.help.Help(argNames[1:]...)
+	c.help.Help(argNames...)
 }

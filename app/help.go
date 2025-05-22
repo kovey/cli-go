@@ -197,44 +197,52 @@ func (c *Command) HelpSub(appName, command string) {
 }
 
 func (c *Command) Help(commandPrefix, appName string) {
-	if !c.args.HasOptions() {
-		if c.args.HasRequired() {
-			fmt.Printf(`"%s" command of %s help details information.
-
-Usage:
-    %s %s %s
-%s
-		`, c.Name, appName, commandPrefix, c.Name, c.args.HelpTitle(), c.args.Format("        "))
-			return
-		}
-		fmt.Printf(`"%s" command of %s help details information.
-
-Usage:
-    %s %s
-%s
-		`, c.Name, appName, commandPrefix, c.Name, c.args.Format("        "))
-		return
+	var builder strings.Builder
+	builder.WriteString(`"`)
+	tmp := strings.Trim(strings.ReplaceAll(commandPrefix, appName, ""), " ")
+	if len(tmp) > 0 {
+		builder.WriteString(tmp)
+		builder.WriteString(" ")
+	}
+	builder.WriteString(c.Name)
+	builder.WriteString(`"`)
+	builder.WriteString(fmt.Sprintf(` command of %s help details information.`, appName))
+	builder.WriteString("\r\n\r\nUsage:\r\n    ")
+	builder.WriteString(fmt.Sprintf("%s %s", commandPrefix, c.Name))
+	cms := c.commands.Format(c.commands.MaxLen())
+	if len(cms) > 0 {
+		builder.WriteString(" <command> [arguments]")
 	}
 
 	if c.args.HasRequired() {
-		fmt.Printf(`"%s" command of %s help details information.
-
-Usage:
-    %s %s %s [options]
-%s
-options
-%s
-		`, c.Name, appName, commandPrefix, c.Name, c.args.HelpTitle(), c.args.FormatSub("        ", true), c.args.FormatSub("    ", false))
-		return
+		builder.WriteString(" ")
+		builder.WriteString(c.args.HelpTitle())
 	}
-	fmt.Printf(`"%s" command of %s help details information.
 
-Usage:
-    %s %s [options]
-%s
-options
-%s
-		`, c.Name, appName, commandPrefix, c.Name, c.args.FormatSub("        ", true), c.args.FormatSub("    ", false))
+	if c.args.HasOptions() {
+		builder.WriteString(" [options]")
+	}
+
+	builder.WriteString("\r\n\r\n")
+	if len(cms) > 0 {
+		builder.WriteString("The commands are:\r\n")
+		builder.WriteString(c.commands.Format(c.args.MaxLen()))
+		builder.WriteString("\r\n\r\n")
+	}
+	if c.args.HasRequired() {
+		builder.WriteString(c.args.FormatSub("        ", true))
+		builder.WriteString("\r\n\r\n")
+	}
+	if c.args.HasOptions() {
+		builder.WriteString("The options are:\r\n")
+		builder.WriteString(c.args.FormatSub("    ", false))
+		builder.WriteString("\r\n\r\n")
+	}
+	if len(cms) > 0 {
+		builder.WriteString(fmt.Sprintf(`Use "%s %s help <command>" for more information about a command.`, commandPrefix, c.Name))
+	}
+
+	fmt.Println(builder.String())
 }
 
 func (c *Command) AddArg(name, comment string, isShort, isRequired bool) {
@@ -274,40 +282,32 @@ func getSpace(maxLen, curLen int) string {
 }
 
 func (h *Help) Show() {
-	if len(h.Commands.commands) == 0 {
-		fmt.Printf(`%s.
-
-Usage:
-    %s [options]
-The options are:
-%s
-`, h.Title, h.AppName, h.Args.Format("    "))
-		return
+	var builder strings.Builder
+	builder.WriteString(h.Title)
+	builder.WriteString(".\r\n\r\nUsage:\r\n    ")
+	builder.WriteString(h.AppName)
+	if len(h.Commands.commands) > 0 {
+		builder.WriteString(" <command> [arguments]")
+	}
+	if len(h.Args.argNames) > 0 {
+		builder.WriteString(" [options]")
+	}
+	builder.WriteString("\r\n\r\n")
+	if len(h.Commands.commands) > 0 {
+		builder.WriteString("The commands are:\r\n")
+		builder.WriteString(h.Commands.Format(h.Commands.MaxLen()))
+		builder.WriteString("\r\n\r\n")
+	}
+	if len(h.Args.argNames) > 0 {
+		builder.WriteString("The options are:\r\n")
+		builder.WriteString(h.Args.Format("    "))
+		builder.WriteString("\r\n\r\n")
 	}
 
-	maxLen := h.Commands.MaxLen()
-	if len(h.Args.argNames) == 0 {
-		fmt.Printf(`%s.
-
-Usage:
-    %s <command> [arguments]
-The commands are:
-%s
-Use "%s help <command>" for more information about a command.
-`, h.Title, h.AppName, h.Commands.Format(maxLen), h.AppName)
-		return
+	if len(h.Commands.commands) > 0 {
+		builder.WriteString(fmt.Sprintf(`Use "%s help <command>" for more information about a command.`, h.AppName))
 	}
-
-	fmt.Printf(`%s.
-
-Usage:
-    %s <command> [arguments] [options]
-The commands are:
-%s
-The options are:
-%s
-Use "%s help <command>" for more information about a command.
-`, h.Title, h.AppName, h.Commands.Format(maxLen), h.Args.Format("    "), h.AppName)
+	fmt.Println(builder.String())
 }
 
 func (h *Help) Help(commands ...string) {
@@ -344,7 +344,7 @@ func (h *Help) Get(commands ...string) *Command {
 	for _, command := range commands {
 		sub, ok := commMap.commands[command]
 		if !ok {
-			break
+			return nil
 		}
 
 		last = sub

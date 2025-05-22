@@ -74,13 +74,14 @@ func NewDaemon(name string) *Daemon {
 
 	_commanLine.help.AppName = name
 	_commanLine.help.Title = fmt.Sprintf("command line of %s", name)
-	_commanLine.FlagNonValue(ko_command_help_arg, fmt.Sprintf("show app[%s] command help", name))
-	_commanLine.FlagArg(Ko_Command_Help, fmt.Sprintf("show app[%s] command help", name), 0)
+	_commanLine.FlagNonValue(ko_command_help_arg, fmt.Sprintf("show app[%s] usage details", name))
+	_commanLine.FlagArg(Ko_Command_Help, fmt.Sprintf("show app[%s] command usage details", name), 0)
 	_commanLine.FlagArg(Ko_Command_Start, fmt.Sprintf("start app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Reload, fmt.Sprintf("reload app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Stop, fmt.Sprintf("stop app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Kill, fmt.Sprintf("kill app[%s] with -9", name), 0)
-	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode when run start command", name))
+	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", name), "start")
+	_commanLine.help.Args.Add(Ko_Command_Help, fmt.Sprintf("show app[%s] usage details", name), false, false)
 	return d
 }
 
@@ -88,45 +89,45 @@ func (d *Daemon) UsageWhenErr() {
 	d.showUsage = true
 }
 
-func (d *Daemon) FlagArg(name string, comment string, index int) {
+func (d *Daemon) FlagArg(name string, comment string, parents ...string) {
 	if len(name) < 2 {
 		debug.Warn("flag[%s] is too short", name)
 		return
 	}
 
-	_commanLine.FlagArg(name, comment, index)
+	_commanLine.FlagArg(name, comment, 0, parents...)
 }
 
-func (d *Daemon) FlagNonValueLong(name string, comment string) {
+func (d *Daemon) FlagNonValueLong(name string, comment string, parents ...string) {
 	if len(name) < 2 {
 		debug.Warn("flag[%s] is too short", name)
 		return
 	}
 
-	_commanLine.FlagNonValueLong(name, comment)
+	_commanLine.FlagNonValueLong(name, comment, parents...)
 }
 
-func (d *Daemon) FlagNonValue(name string, comment string) {
-	_commanLine.FlagNonValue(name, comment)
+func (d *Daemon) FlagNonValue(name string, comment string, parents ...string) {
+	_commanLine.FlagNonValue(name, comment, parents...)
 }
 
-func (d *Daemon) FlagLong(name string, def any, t Type, comment string) {
+func (d *Daemon) FlagLong(name string, def any, t Type, comment string, parents ...string) {
 	if len(name) < 2 {
 		debug.Warn("flag[%s] is too short", name)
 		return
 	}
 
-	_commanLine.FlagLong(name, def, t, comment)
+	_commanLine.FlagLong(name, def, t, comment, parents...)
 }
 
-func (d *Daemon) Flag(name string, def any, t Type, comment string) {
-	_commanLine.Flag(name, def, t, comment)
+func (d *Daemon) Flag(name string, def any, t Type, comment string, parents ...string) {
+	_commanLine.Flag(name, def, t, comment, parents...)
 }
 
-func (d *Daemon) Get(name string) (*Flag, error) {
-	f := _commanLine.Get(name)
+func (d *Daemon) Get(names ...string) (*Flag, error) {
+	f := _commanLine.Get(names...)
 	if f == nil {
-		return nil, fmt.Errorf("[%s] is not exists", name)
+		return nil, fmt.Errorf("[%s] is not exists", strings.Join(names, "->"))
 	}
 
 	return f, nil
@@ -376,8 +377,12 @@ func (d *Daemon) Run() error {
 
 	_commanLine.Parse(os.Args[1:])
 	method := Ko_Command_Start
-	if f, err := d.Arg(0, TYPE_STRING); err == nil {
-		method = f.String()
+	if _commanLine.hasHelp() {
+		method = Ko_Command_Help
+	} else {
+		if f, err := d.Arg(0, TYPE_STRING); err == nil {
+			method = f.String()
+		}
 	}
 
 	switch method {

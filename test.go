@@ -29,10 +29,13 @@ Use "migrate help <command>" for more information about a command.
 **/
 
 func (s *serv) Flag(a app.AppInterface) error {
-	a.FlagLong("to", "test", app.TYPE_STRING, "test")
-	a.FlagNonValue("v", "show version")
-	a.FlagNonValueLong("version", "show version")
-	a.FlagLong("to-user", "user", app.TYPE_STRING, "user")
+	a.FlagArg("create", "create config")
+	a.FlagArg("build", "build config", "create")
+	a.FlagArg("make", "make config", "create", "build")
+	a.FlagLong("to", "test", app.TYPE_STRING, "test", "create", "build")
+	a.FlagNonValue("v", "show version", "create")
+	a.FlagNonValueLong("version", "show version", "create", "build")
+	a.FlagLong("to-user", "user", app.TYPE_STRING, "user", "create", "build", "make")
 	return nil
 }
 

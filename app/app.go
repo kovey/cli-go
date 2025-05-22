@@ -12,14 +12,14 @@ func init() {
 }
 
 type AppInterface interface {
-	Get(name string) (*Flag, error)
+	Get(names ...string) (*Flag, error)
 	Name() string
 	SetDebugLevel(t debug.DebugType)
-	Flag(name string, def any, t Type, comment string)
-	FlagLong(name string, def any, t Type, comment string)
-	FlagNonValueLong(name string, comment string)
-	FlagNonValue(name string, comment string)
-	FlagArg(name string, comment string, index int)
+	Flag(name string, def any, t Type, comment string, parents ...string)
+	FlagLong(name string, def any, t Type, comment string, parents ...string)
+	FlagNonValueLong(name string, comment string, parents ...string)
+	FlagNonValue(name string, comment string, parents ...string)
+	FlagArg(name string, comment string, parents ...string)
 	Arg(index int, t Type) (*Flag, error)
 	UsageWhenErr()
 }
