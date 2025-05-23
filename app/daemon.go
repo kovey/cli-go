@@ -89,8 +89,12 @@ func (d *Daemon) _help() {
 	_commanLine.help.Args.Add(Ko_Command_Help, fmt.Sprintf("show app[%s] usage details", _commanLine.help.AppName), false, "")
 }
 
-func (d *Daemon) CleanCommandLine() {
+func (d *Daemon) CleanCommandLine(isCleanHelp bool) {
 	_commanLine.CleanDefaults()
+	if isCleanHelp {
+		return
+	}
+
 	d._help()
 }
 
