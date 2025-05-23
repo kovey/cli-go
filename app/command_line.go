@@ -161,8 +161,6 @@ func (c *CommandLine) Parse(args []string) {
 			break
 		}
 	}
-
-	return
 }
 
 func (c *CommandLine) checkShort(name string) error {
@@ -231,7 +229,7 @@ func (c *CommandLine) parseShort() (bool, error) {
 }
 
 func (c *CommandLine) parseLong() (bool, error) {
-	arg := strings.TrimLeft(c.args[0], "--")
+	arg := strings.TrimLeft(c.args[0], "-")
 	if arg == "h" || arg == "help" {
 		Usage()
 		os.Exit(0)

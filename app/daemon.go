@@ -235,7 +235,7 @@ func (d *Daemon) runChild() {
 }
 
 func (d *Daemon) listen() {
-	signal.Notify(d.sig, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1, syscall.SIGKILL)
+	signal.Notify(d.sig, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1)
 	defer d.check.Stop()
 
 	for {
@@ -248,14 +248,14 @@ func (d *Daemon) listen() {
 					debug.Erro("sinal to app[%s] child[%d] failure, error: %s", d.name, d.childPid, err)
 				}
 				switch s {
-				case os.Interrupt, syscall.SIGTERM, syscall.SIGKILL:
+				case os.Interrupt, syscall.SIGTERM:
 					return
 				}
 			}
 
 			if d.serv != nil {
 				switch s {
-				case os.Interrupt, syscall.SIGTERM, syscall.SIGKILL:
+				case os.Interrupt, syscall.SIGTERM:
 					if err := d.serv.Shutdown(d); err != nil {
 						debug.Erro("app[%s] stop failure, error: %s", d.name, err)
 					}
