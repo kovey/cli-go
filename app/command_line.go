@@ -307,11 +307,13 @@ func (c *CommandLine) parseOne() (bool, error) {
 	if c.args[0] == Ko_Command_Help {
 		if c.args[0] == flag.name {
 			flag.value = c.args[0]
+			flag.has = true
 			c.others = append(c.others, flag)
 		} else {
-			c.others = append(c.others, &Flag{name: c.args[0], value: c.args[0], def: c.args[0], t: TYPE_STRING, isArg: true})
+			c.others = append(c.others, &Flag{name: c.args[0], value: c.args[0], def: c.args[0], t: TYPE_STRING, isArg: true, has: true})
 		}
 	} else {
+		flag.has = true
 		flag.value = c.args[0]
 		c.others = append(c.others, flag)
 	}
