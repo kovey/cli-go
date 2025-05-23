@@ -1,10 +1,6 @@
 # kovey cli of terminal by golang
 ### Description
 #### This is a cli app library with golang
-#### Default flag "s" is signal, contains reload, stop and maintain
-#### App will call Stop callback when recevie stop signal
-#### App will call Reload callback when app is stoped
-#### App will open show when recevie info signal
 ### Usage
     go get -u github.com/kovey/cli-go
 ### Examples
@@ -12,61 +8,86 @@
     package main
 
     import (
+        "time"
+
         "github.com/kovey/cli-go/app"
-        "github.com/kovey/cli-go/debug"
+        "github.com/kovey/debug-go/debug"
     )
 
     func main() {
-        cli := app.NewApp("sample example")
-        cli.Action = func(a *app.App) error {
-            debug.Info("app is running")
-            path, err := a.Get("c")
-            if err != nil {
-                return err
-            }
+        testServ()
+    }
 
-            i, err := a.Get("i")
-            if err != nil {
-                return err
-            }
+    type serv struct {
+        *app.ServBase
+    }
 
-            b, err := a.Get("b")
-            if err != nil {
-                return err
-            }
+    func (s *serv) Flag(a app.AppInterface) error {
+        a.FlagArg("create", "create config")
+        a.FlagArg("build", "build config", "create")
+        a.FlagArg("make", "make config", "create", "build")
+        a.FlagLong("to", nil, app.TYPE_STRING, "test", "create", "build")
+        a.FlagLong("from", nil, app.TYPE_STRING, "from path", "create", "build")
+        a.FlagNonValue("v", "show version", "create")
+        a.FlagNonValueLong("version", "show version", "create", "build")
+        a.FlagLong("to-user", "user", app.TYPE_STRING, "user", "create", "build", "make")
+        a.FlagLong("path", nil, app.TYPE_STRING, "config path")
+        a.FlagLong("name", nil, app.TYPE_STRING, "name")
+        return nil
+    }
 
-            debug.Info("c is [%s]", path.String())
-            debug.Info("i is [%s]", i.Int())
-            debug.Info("b is [%t]", b.Bool())
-            return nil
+    func (s *serv) Init(a app.AppInterface) error {
+        debug.Info("[%s] init", a.Name())
+        return nil
+    }
+
+    func (s *serv) Run(a app.AppInterface) error {
+        debug.Info("[%s] run", a.Name())
+        if test, err := a.Get("to"); err == nil {
+            debug.Info("test: %s", test.String())
+        }
+        if f, err := a.Arg(0, app.TYPE_STRING); err == nil {
+            debug.Info("arg 0: %s", f.String())
+        }
+        if f, err := a.Arg(1, app.TYPE_STRING); err == nil {
+            debug.Info("arg 1: %s", f.String())
+        }
+        if f, err := a.Get("to-user"); err == nil {
+            debug.Info("to-user: %s", f.String())
         }
 
-        cli.Reload = func(a *app.App) error {
-            debug.Info("app is reload")
-            return nil
-        }
+        time.Sleep(30 * time.Second)
+        //panic("run error")
+        return nil
+    }
 
-        cli.Stop = func(a *app.App) error {
-            debug.Info("app is stop")
-            return nil
-        }
+    func (s *serv) Reload(a app.AppInterface) error {
+        debug.Info("[%s] reload", a.Name())
+        return nil
+    }
 
-        cli.Flag("c", "", app.TYPE_STRING, "app config path, type string")
-        cli.Flag("i", 0, app.TYPE_INT, "type int config")
-        cli.Flag("b", false, app.TYPE_BOOL, "type bool config")
+    func (s *serv) Shutdown(a app.AppInterface) error {
+        debug.Info("[%s] shutdown", a.Name())
+        return nil
+    }
 
-        err := cli.Run()
-        if err != nil {
-            panic(err)
+    func testServ() {
+        cli := app.NewApp("test")
+        cli.SetDebugLevel(debug.Debug_Info)
+        cli.SetServ(&serv{})
+        if err := cli.Run(); err != nil {
+            debug.Erro(err.Error())
         }
     }
 
+
 ```
 ```bash
-   go run main.go -c test -i 100 -b false # run app
-   go run main.go -s reload # reload app
-   go run main.go -s stop # stop app
-   go run main.go -s info # open or close show app info
+   go run test.go start # run app
+   go run test.go start --daemon # run app with daemon mode
+   go run test.go reload # reload app
+   go run test.go stop # stop app
+   go run test.go kill # kill app
 ```
 ### Env
     .env file
