@@ -74,19 +74,24 @@ func NewDaemon(name string) *Daemon {
 
 	_commanLine.help.AppName = name
 	_commanLine.help.Title = fmt.Sprintf("command line of %s", name)
-	_commanLine.FlagNonValue(ko_command_help_arg, fmt.Sprintf("show app[%s] usage details", name))
-	_commanLine.FlagArg(Ko_Command_Help, fmt.Sprintf("show app[%s] command usage details", name), 0)
 	_commanLine.FlagArg(Ko_Command_Start, fmt.Sprintf("start app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Reload, fmt.Sprintf("reload app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Stop, fmt.Sprintf("stop app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Kill, fmt.Sprintf("kill app[%s] with -9", name), 0)
 	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", name), "start")
-	_commanLine.help.Args.Add(Ko_Command_Help, fmt.Sprintf("show app[%s] usage details", name), false, false)
+	d._help()
 	return d
+}
+
+func (d *Daemon) _help() {
+	_commanLine.FlagNonValue(ko_command_help_arg, fmt.Sprintf("show app[%s] usage details", _commanLine.help.AppName))
+	_commanLine.FlagArg(Ko_Command_Help, fmt.Sprintf("show app[%s] command usage details", _commanLine.help.AppName), 0)
+	_commanLine.help.Args.Add(Ko_Command_Help, fmt.Sprintf("show app[%s] usage details", _commanLine.help.AppName), false, "")
 }
 
 func (d *Daemon) CleanCommandLine() {
 	_commanLine.CleanDefaults()
+	d._help()
 }
 
 func (d *Daemon) UsageWhenErr() {
