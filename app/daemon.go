@@ -43,6 +43,7 @@ type Daemon struct {
 	name         string
 	showUsage    bool
 	check        *time.Ticker
+	workdir      string
 }
 
 func NewDaemon(name string) *Daemon {
@@ -417,7 +418,7 @@ func (d *Daemon) Run() error {
 
 func (d *Daemon) doRun() error {
 	env := append(os.Environ(), fmt.Sprintf("%s=%t", Ko_Cli_Daemon_Background, true))
-	d.cmd = &exec.Cmd{Path: util.ExecFilePath(), Args: d.args, SysProcAttr: &syscall.SysProcAttr{Setsid: true}, Env: env}
+	d.cmd = &exec.Cmd{Path: util.ExecFilePath(), Args: d.args, SysProcAttr: &syscall.SysProcAttr{Setsid: true}, Env: env, Dir: util.CurrentDir()}
 	err := d.cmd.Start()
 	if err == nil {
 		d.childPid = d.cmd.Process.Pid

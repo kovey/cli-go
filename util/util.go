@@ -3,7 +3,6 @@ package util
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
@@ -42,8 +41,12 @@ func IsFile(file string) bool {
 }
 
 func CurrentDir() string {
-	_, file, _, _ := runtime.Caller(1)
-	return filepath.Dir(file)
+	path, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	return path
 }
 
 func IsRunWithGoRunCmd() bool {

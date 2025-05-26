@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/kovey/cli-go/app"
+	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
 )
 
@@ -89,6 +90,7 @@ func testServ() {
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
 	debug.SetFileLine(debug.File_Line_Show)
+	debug.Info("current: %s", util.CurrentDir())
 	cli.SetServ(&serv{})
 	if err := cli.Run(); err != nil {
 		debug.Erro(err.Error())
