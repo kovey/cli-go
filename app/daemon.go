@@ -304,6 +304,10 @@ func (d *Daemon) _run(commands ...string) error {
 		return d.runApp()
 	}
 
+	if util.IsRunWithGoRunCmd() {
+		return fmt.Errorf("daemon is unsupport when app run with go run command")
+	}
+
 	if !d.isBackground {
 		if err := d.doRun(); err != nil {
 			return fmt.Errorf("run background process error: %s", err)
@@ -413,7 +417,7 @@ func (d *Daemon) Run() error {
 
 func (d *Daemon) doRun() error {
 	env := append(os.Environ(), fmt.Sprintf("%s=%t", Ko_Cli_Daemon_Background, true))
-	d.cmd = &exec.Cmd{Path: d.args[0], Args: d.args, SysProcAttr: &syscall.SysProcAttr{Setsid: true}, Env: env}
+	d.cmd = &exec.Cmd{Path: util.ExecFilePath(), Args: d.args, SysProcAttr: &syscall.SysProcAttr{Setsid: true}, Env: env}
 	err := d.cmd.Start()
 	if err == nil {
 		d.childPid = d.cmd.Process.Pid

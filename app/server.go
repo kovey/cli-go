@@ -2,7 +2,9 @@ package app
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/kovey/cli-go/env"
 	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
 )
@@ -22,7 +24,12 @@ type ServBase struct {
 }
 
 func (s *ServBase) PidFile(a AppInterface) string {
-	return fmt.Sprintf("%s/%s.run.pid", util.RunDir(), a.Name())
+	path := os.Getenv(env.PID_FILE)
+	if path != "" {
+		return path
+	}
+
+	return fmt.Sprintf("%s/%s.run.pid", util.CurrentDir(), a.Name())
 }
 
 func (s *ServBase) Flag(AppInterface) error {
