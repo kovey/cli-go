@@ -283,8 +283,14 @@ func (d *Daemon) runApp() error {
 
 		d.serv.Panic(d)
 		run.Panic(err)
+		debug.Info("app[%s] total run time: %s", d.name, GetFormatRunTime())
 	}()
 
+	startTime = time.Now()
+	d.SetDebugLevel(debug.DebugType(os.Getenv(env.DEBUG_LEVEL)))
+	if line, err := env.GetInt(os.Getenv(env.DEBUG_SHOW_FILE)); err == nil {
+		debug.SetFileLine(debug.FileLine(line))
+	}
 	d.serv.AsyncLog(d)
 
 	if err := d.serv.Init(d); err != nil {
