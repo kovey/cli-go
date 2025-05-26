@@ -285,6 +285,8 @@ func (d *Daemon) runApp() error {
 		run.Panic(err)
 	}()
 
+	d.serv.AsyncLog(d)
+
 	if err := d.serv.Init(d); err != nil {
 		return fmt.Errorf("run app[%s] init error: %s", d.name, err)
 	}
@@ -424,4 +426,14 @@ func (d *Daemon) doRun() error {
 		d.childPid = d.cmd.Process.Pid
 	}
 	return err
+}
+
+func (d *Daemon) _runChild(call func(a AppInterface)) {
+	defer d.wait.Done()
+	call(d)
+}
+
+func (d *Daemon) RunChild(call func(a AppInterface)) {
+	d.wait.Add(1)
+	go d._runChild(call)
 }

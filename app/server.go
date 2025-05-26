@@ -6,6 +6,7 @@ import (
 
 	"github.com/kovey/cli-go/env"
 	"github.com/kovey/cli-go/util"
+	"github.com/kovey/debug-go/async"
 	"github.com/kovey/debug-go/debug"
 )
 
@@ -13,6 +14,7 @@ type ServInterface interface {
 	Flag(AppInterface) error
 	Init(AppInterface) error
 	Run(AppInterface) error
+	AsyncLog(AppInterface)
 	Shutdown(AppInterface) error
 	Reload(AppInterface) error
 	Panic(AppInterface)
@@ -21,6 +23,31 @@ type ServInterface interface {
 }
 
 type ServBase struct {
+}
+
+func (s *ServBase) AsyncLog(a AppInterface) {
+	if os.Getenv(env.DEBUG_ASYNC_OPEN) != "On" {
+		return
+	}
+
+	logDir := os.Getenv(env.LOG_DIR)
+	if logDir == "" {
+		return
+	}
+
+	maxLen, _ := env.GetInt(env.LOG_MAX)
+	if maxLen == 0 {
+		maxLen = 10240
+	}
+
+	if err := async.Start(logDir, maxLen); err != nil {
+		debug.Erro("async log start error: %s", err)
+		return
+	}
+
+	a.RunChild(func(ai AppInterface) {
+		async.Listen()
+	})
 }
 
 func (s *ServBase) PidFile(a AppInterface) string {

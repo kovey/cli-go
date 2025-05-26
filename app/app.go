@@ -23,6 +23,7 @@ type AppInterface interface {
 	Arg(index int, t Type) (*Flag, error)
 	UsageWhenErr()
 	CleanCommandLine(isCleanHelp bool)
+	RunChild(func(AppInterface))
 }
 
 type App struct {

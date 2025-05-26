@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kovey/cli-go/app"
-	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
 )
 
@@ -80,17 +79,9 @@ func (s *serv) Shutdown(a app.AppInterface) error {
 }
 
 func testServ() {
-	/**
-	file, err := os.OpenFile("./test.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		panic(err)
-	}
-	debug.SetWriter(file)
-	**/
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)
 	debug.SetFileLine(debug.File_Line_Show)
-	debug.Info("current: %s", util.CurrentDir())
 	cli.SetServ(&serv{})
 	if err := cli.Run(); err != nil {
 		debug.Erro(err.Error())
