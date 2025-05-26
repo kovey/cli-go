@@ -13,6 +13,7 @@ import (
 
 	"github.com/kovey/cli-go/env"
 	"github.com/kovey/cli-go/util"
+	"github.com/kovey/debug-go/async"
 	"github.com/kovey/debug-go/debug"
 	"github.com/kovey/debug-go/run"
 )
@@ -44,6 +45,7 @@ type Daemon struct {
 	showUsage    bool
 	check        *time.Ticker
 	workdir      string
+	internalSig  chan bool
 }
 
 func NewDaemon(name string) *Daemon {
@@ -55,6 +57,7 @@ func NewDaemon(name string) *Daemon {
 	}
 
 	d := &Daemon{name: name, wait: sync.WaitGroup{}, sig: make(chan os.Signal, 1), openChild: make(chan bool, 1), isBackground: false, check: time.NewTicker(1 * time.Second)}
+	d.internalSig = make(chan bool, 1)
 	if ok, err := strconv.ParseBool(os.Getenv(Ko_Cli_Daemon_Background)); err == nil {
 		d.isBackground = ok
 	}
@@ -236,11 +239,17 @@ func (d *Daemon) runChild() {
 }
 
 func (d *Daemon) listen() {
+	if !d.isBackground {
+		return
+	}
+
 	signal.Notify(d.sig, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1)
 	defer d.check.Stop()
 
 	for {
 		select {
+		case <-d.internalSig:
+			return
 		case now := <-d.check.C:
 			loadEnv(now)
 		case s := <-d.sig:
@@ -274,10 +283,22 @@ func (d *Daemon) listen() {
 	}
 }
 
-func (d *Daemon) runApp() error {
+func (d *Daemon) _runAppEnd() {
+	if !d.isBackground {
+		return
+	}
+
+	d.internalSig <- true
+}
+
+func (d *Daemon) _runApp() {
+	defer d.wait.Done()
+	defer d._runAppEnd()
+	defer async.Stop()
 	defer func() {
 		err := recover()
 		if err == nil {
+			debug.Info("app[%s] total run time: %s", d.name, GetFormatRunTime())
 			return
 		}
 
@@ -294,7 +315,8 @@ func (d *Daemon) runApp() error {
 	d.serv.AsyncLog(d)
 
 	if err := d.serv.Init(d); err != nil {
-		return fmt.Errorf("run app[%s] init error: %s", d.name, err)
+		debug.Erro("run app[%s] init error: %s", d.name, err)
+		return
 	}
 
 	if err := d.serv.Run(d); err != nil {
@@ -302,9 +324,16 @@ func (d *Daemon) runApp() error {
 			d.serv.Usage()
 		}
 
-		return fmt.Errorf("run app[%s] error: %s", d.name, err)
+		debug.Erro("run app[%s] error: %s", d.name, err)
 	}
+}
 
+func (d *Daemon) runApp() error {
+	d.wait.Add(1)
+	go d._runApp()
+
+	d.listen()
+	d.wait.Wait()
 	return nil
 }
 
