@@ -86,7 +86,7 @@ func NewDaemon(name string) *Daemon {
 	_commanLine.FlagArg(Ko_Command_Kill, fmt.Sprintf("kill app[%s] with -9", name), 0)
 	_commanLine.FlagArg(Ko_Command_Restart, fmt.Sprintf("restart app[%s]", name), 0)
 	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", name), Ko_Command_Start)
-	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("restart app[%s] with daemon mode", name), Ko_Command_Restart)
+	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("restart app[%s] and runned with daemon mode", name), Ko_Command_Restart)
 	d._help()
 	return d
 }

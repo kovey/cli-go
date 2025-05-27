@@ -87,6 +87,8 @@
    go run test.go start --daemon # run app with daemon mode
    go run test.go reload # reload app
    go run test.go stop # stop app
+   go run test.go restart # restart app
+   go run test.go restart --daemon # restart app and run app with daemon mode
    go run test.go kill # kill app
 ```
 ### Env
