@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kovey/cli-go/env"
+	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/async"
 	"github.com/kovey/debug-go/debug"
@@ -24,6 +25,7 @@ const (
 	Ko_Command_Reload        = "reload"
 	Ko_Command_Stop          = "stop"
 	Ko_Command_Kill          = "kill"
+	Ko_Command_Restart       = "restart"
 	Ko_Command_Daemon        = "daemon"
 	ko_command_daemon_arg    = "--daemon"
 	Ko_Command_Help          = "help"
@@ -82,7 +84,9 @@ func NewDaemon(name string) *Daemon {
 	_commanLine.FlagArg(Ko_Command_Reload, fmt.Sprintf("reload app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Stop, fmt.Sprintf("stop app[%s]", name), 0)
 	_commanLine.FlagArg(Ko_Command_Kill, fmt.Sprintf("kill app[%s] with -9", name), 0)
-	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", name), "start")
+	_commanLine.FlagArg(Ko_Command_Restart, fmt.Sprintf("restart app[%s]", name), 0)
+	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", name), Ko_Command_Start)
+	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("restart app[%s] with daemon mode", name), Ko_Command_Restart)
 	d._help()
 	return d
 }
@@ -263,7 +267,7 @@ func (d *Daemon) listen() {
 				}
 			}
 
-			if d.serv != nil {
+			if d.childPid == 0 && d.serv != nil {
 				switch s {
 				case os.Interrupt, syscall.SIGTERM:
 					if err := d.serv.Shutdown(d); err != nil {
@@ -273,6 +277,9 @@ func (d *Daemon) listen() {
 				case syscall.SIGUSR1:
 					if err := d.serv.Reload(d); err != nil {
 						debug.Erro("app[%s] reload failure, error: %s", d.name, err)
+						gui.PrintlnFailure("app[%s] reloaded", d.name)
+					} else {
+						gui.PrintlnOk("app[%s] reloaded", d.name)
 					}
 				}
 			}
@@ -298,13 +305,13 @@ func (d *Daemon) _runApp() {
 	defer func() {
 		err := recover()
 		if err == nil {
-			debug.Info("app[%s] total run time: %s", d.name, GetFormatRunTime())
+			gui.PrintlnNormal(fmt.Sprintf("app[%s] total run time", d.name), fmt.Sprintf("[%s]", GetFormatRunTime()))
 			return
 		}
 
 		d.serv.Panic(d)
 		run.Panic(err)
-		debug.Info("app[%s] total run time: %s", d.name, GetFormatRunTime())
+		gui.PrintlnNormal(fmt.Sprintf("app[%s] total run time", d.name), fmt.Sprintf("[%s]", GetFormatRunTime()))
 	}()
 
 	startTime = time.Now()
@@ -348,6 +355,7 @@ func (d *Daemon) _run(commands ...string) error {
 
 	if !d.isBackground {
 		if err := d.doRun(); err != nil {
+			gui.PrintlnFailure("app[%s] started", d.name)
 			return fmt.Errorf("run background process error: %s", err)
 		}
 
@@ -356,6 +364,7 @@ func (d *Daemon) _run(commands ...string) error {
 
 	d.pidFile = d.serv.PidFile(d)
 	if util.IsFile(d.pidFile) {
+		gui.PrintlnFailure("app[%s] started", d.name)
 		return fmt.Errorf("app[%s] is running", d.name)
 	}
 
@@ -376,9 +385,9 @@ func (d *Daemon) _run(commands ...string) error {
 		}
 	}()
 
-	debug.Info("app[%s] run, pid[%s]", d.name, d.PidString())
 	d.wait.Add(1)
 	go d.runChild()
+	gui.PrintlnOk("pid[%d] of app[%s] started", d.pid, d.name)
 	d.listen()
 	d.wait.Wait()
 	return nil
@@ -396,10 +405,36 @@ func (d *Daemon) _reload() error {
 func (d *Daemon) _stop() error {
 	pid := d.getPid()
 	if pid < 1 {
+		gui.PrintlnFailure("app[%s] stopped", d.name)
 		return fmt.Errorf("app[%s] not running", d.name)
 	}
 
-	return syscall.Kill(pid, syscall.SIGTERM)
+	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+		gui.PrintlnFailure("pid[%d] of app[%s] stopped", pid, d.name)
+		return err
+	}
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+		if err := syscall.Kill(pid, 0); err != nil {
+			break
+		}
+	}
+
+	gui.PrintlnOk("pid[%d] of app[%s] stopped", pid, d.name)
+	return nil
+}
+
+func (d *Daemon) _restart() error {
+	if err := d._stop(); err != nil {
+		debug.Erro(err.Error())
+	}
+
+	d.args[1] = Ko_Command_Start
+	return d._run(Ko_Command_Restart)
 }
 
 func (d *Daemon) _kill() error {
@@ -445,6 +480,8 @@ func (d *Daemon) Run() error {
 		return d._stop()
 	case Ko_Command_Kill:
 		return d._kill()
+	case Ko_Command_Restart:
+		return d._restart()
 	case Ko_Command_Help:
 		_commanLine.Help()
 		return nil
@@ -455,7 +492,7 @@ func (d *Daemon) Run() error {
 
 func (d *Daemon) doRun() error {
 	env := append(os.Environ(), fmt.Sprintf("%s=%t", Ko_Cli_Daemon_Background, true))
-	d.cmd = &exec.Cmd{Path: util.ExecFilePath(), Args: d.args, SysProcAttr: &syscall.SysProcAttr{Setsid: true}, Env: env, Dir: util.CurrentDir()}
+	d.cmd = &exec.Cmd{Path: util.ExecFilePath(), Args: d.args, SysProcAttr: &syscall.SysProcAttr{Setsid: true}, Env: env, Dir: util.CurrentDir(), Stdin: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr}
 	err := d.cmd.Start()
 	if err == nil {
 		d.childPid = d.cmd.Process.Pid
