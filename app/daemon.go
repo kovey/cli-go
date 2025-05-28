@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -32,6 +33,10 @@ const (
 	ko_command_help_arg      = "h"
 )
 
+var Err_App_Init = errors.New("app init failure")
+var Err_App_Run = errors.New("app run failure")
+var Err_Not_Restart = errors.New("app not restart")
+
 type Daemon struct {
 	pid          int
 	args         []string
@@ -48,6 +53,7 @@ type Daemon struct {
 	check        *time.Ticker
 	workdir      string
 	internalSig  chan bool
+	childRunErr  error
 }
 
 func NewDaemon(name string) *Daemon {
@@ -236,6 +242,7 @@ func (d *Daemon) runChild() {
 
 	if err := d.cmd.Wait(); err != nil {
 		debug.Erro("wait child error: %s", err)
+		d.internalSig <- true
 		return
 	}
 
@@ -323,6 +330,7 @@ func (d *Daemon) _runApp() {
 
 	if err := d.serv.Init(d); err != nil {
 		debug.Erro("run app[%s] init error: %s", d.name, err)
+		d.childRunErr = Err_App_Init
 		return
 	}
 
@@ -331,6 +339,7 @@ func (d *Daemon) _runApp() {
 			d.serv.Usage()
 		}
 
+		d.childRunErr = err
 		debug.Erro("run app[%s] error: %s", d.name, err)
 	}
 }
@@ -341,12 +350,18 @@ func (d *Daemon) runApp() error {
 
 	d.listen()
 	d.wait.Wait()
-	return nil
+	return d.childRunErr
 }
 
 func (d *Daemon) _run(commands ...string) error {
 	if f := _commanLine.Get(append(commands, Ko_Command_Daemon)...); f == nil || !f.has {
-		return d.runApp()
+		err := d.runApp()
+		if d.isBackground {
+			if err == Err_App_Init || err == Err_Not_Restart {
+				os.Exit(1)
+			}
+		}
+		return err
 	}
 
 	if util.IsRunWithGoRunCmd() {
