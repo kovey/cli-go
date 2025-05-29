@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kovey/cli-go/app"
@@ -45,7 +46,7 @@ func (s *serv) Flag(a app.AppInterface) error {
 
 func (s *serv) Init(a app.AppInterface) error {
 	debug.Info("[%s] init", a.Name())
-	return nil
+	return fmt.Errorf("init error")
 }
 
 func (s *serv) Run(a app.AppInterface) error {

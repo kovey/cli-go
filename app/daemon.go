@@ -381,7 +381,7 @@ func (d *Daemon) _run(commands ...string) error {
 			return fmt.Errorf("run background process error: %s", err)
 		}
 
-		gui.PrintlnOk("pid[%d] of app[%s] started", d.pid, d.name)
+		gui.PrintlnOk("pid[%d] of app[%s] started", d.childPid, d.name)
 		os.Exit(0)
 	}
 
