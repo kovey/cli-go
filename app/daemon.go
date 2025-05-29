@@ -68,6 +68,7 @@ func NewDaemon(name string) *Daemon {
 	d.internalSig = make(chan bool, 1)
 	if ok, err := strconv.ParseBool(os.Getenv(Ko_Cli_Daemon_Background)); err == nil {
 		d.isBackground = ok
+		gui.Background()
 	}
 	for _, arg := range os.Args {
 		if arg == ko_command_daemon_arg && d.isBackground {
@@ -312,13 +313,13 @@ func (d *Daemon) _runApp() {
 	defer func() {
 		err := recover()
 		if err == nil {
-			gui.PrintlnNormal(fmt.Sprintf("app[%s] total run time", d.name), fmt.Sprintf("[%s]", GetFormatRunTime()))
+			debug.Info("app[%s] total run time: [%s]", d.name, GetFormatRunTime())
 			return
 		}
 
+		debug.Info("app[%s] total run time: [%s]", d.name, GetFormatRunTime())
 		d.serv.Panic(d)
 		run.Panic(err)
-		gui.PrintlnNormal(fmt.Sprintf("app[%s] total run time", d.name), fmt.Sprintf("[%s]", GetFormatRunTime()))
 	}()
 
 	startTime = time.Now()
@@ -368,19 +369,20 @@ func (d *Daemon) _run(commands ...string) error {
 		return fmt.Errorf("daemon is unsupport when app run with go run command")
 	}
 
+	d.pidFile = d.serv.PidFile(d)
+	if util.IsFile(d.pidFile) {
+		gui.PrintlnFailure("app[%s] started", d.name)
+		return fmt.Errorf("app[%s] is running", d.name)
+	}
+
 	if !d.isBackground {
 		if err := d.doRun(); err != nil {
 			gui.PrintlnFailure("app[%s] started", d.name)
 			return fmt.Errorf("run background process error: %s", err)
 		}
 
+		gui.PrintlnOk("pid[%d] of app[%s] started", d.pid, d.name)
 		os.Exit(0)
-	}
-
-	d.pidFile = d.serv.PidFile(d)
-	if util.IsFile(d.pidFile) {
-		gui.PrintlnFailure("app[%s] started", d.name)
-		return fmt.Errorf("app[%s] is running", d.name)
 	}
 
 	defer func() {
@@ -402,7 +404,6 @@ func (d *Daemon) _run(commands ...string) error {
 
 	d.wait.Add(1)
 	go d.runChild()
-	gui.PrintlnOk("pid[%d] of app[%s] started", d.pid, d.name)
 	d.listen()
 	d.wait.Wait()
 	return nil

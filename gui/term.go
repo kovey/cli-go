@@ -8,6 +8,12 @@ import (
 	"golang.org/x/term"
 )
 
+var isBackground = false
+
+func Background() {
+	isBackground = true
+}
+
 func Middle(left, right string) string {
 	w, _, _ := term.GetSize(int(os.Stdin.Fd()))
 	middle := " "
@@ -26,7 +32,12 @@ func Middle(left, right string) string {
 }
 
 func Println(left, middle, right string) {
-	fmt.Printf("%s%s%s\n", left, middle, right)
+	if isBackground {
+		fmt.Printf("\r\n%s%s%s\r\n", left, middle, right)
+		return
+	}
+
+	fmt.Printf("%s%s%s\r\n", left, middle, right)
 }
 
 func PrintlnNormal(left, right string) {
