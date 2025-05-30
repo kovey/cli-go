@@ -359,9 +359,26 @@ func (d *Daemon) runApp() error {
 }
 
 func (d *Daemon) _runDaemon() error {
-	if err := d.doRun(); err != nil {
+	if util.IsRunWithGoRunCmd() {
+		debug.Erro("daemon is unsupport when app run with go run command")
 		gui.PrintlnFailure("app[%s] started", d.name)
-		return fmt.Errorf("run background process error: %s", err)
+		os.Exit(0)
+		return nil
+	}
+
+	d.pidFile = d.serv.PidFile(d)
+	if util.IsFile(d.pidFile) {
+		debug.Erro("app[%s] is running", d.name)
+		gui.PrintlnFailure("app[%s] started", d.name)
+		os.Exit(0)
+		return nil
+	}
+
+	if err := d.doRun(); err != nil {
+		debug.Erro("run background process error: %s", err)
+		gui.PrintlnFailure("app[%s] started", d.name)
+		os.Exit(0)
+		return nil
 	}
 
 	go func() {
@@ -391,16 +408,6 @@ func (d *Daemon) _run(commands ...string) error {
 			}
 		}
 		return err
-	}
-
-	if util.IsRunWithGoRunCmd() {
-		return fmt.Errorf("daemon is unsupport when app run with go run command")
-	}
-
-	d.pidFile = d.serv.PidFile(d)
-	if util.IsFile(d.pidFile) {
-		gui.PrintlnFailure("app[%s] started", d.name)
-		return fmt.Errorf("app[%s] is running", d.name)
 	}
 
 	if !d.isBackground {
@@ -434,22 +441,33 @@ func (d *Daemon) _run(commands ...string) error {
 func (d *Daemon) _reload() error {
 	pid := d.getPid()
 	if pid < 1 {
-		return fmt.Errorf("app[%s] not running", d.name)
+		debug.Erro("app[%s] not running", d.name)
+		gui.PrintlnFailure("app[%s] reloaded", d.name)
+		return nil
 	}
 
-	return syscall.Kill(pid, syscall.SIGUSR1)
+	if err := syscall.Kill(pid, syscall.SIGUSR1); err != nil {
+		debug.Erro("app[%s] reloaded failure: %s", d.name, err)
+		gui.PrintlnFailure("app[%s] reloaded", d.name)
+		return nil
+	}
+
+	gui.PrintlnOk("app[%s] reloaded", d.name)
+	return nil
 }
 
 func (d *Daemon) _stop() error {
 	pid := d.getPid()
 	if pid < 1 {
+		debug.Erro("app[%s] not running", d.name)
 		gui.PrintlnFailure("app[%s] stopped", d.name)
-		return fmt.Errorf("app[%s] not running", d.name)
+		return nil
 	}
 
 	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+		debug.Erro("app[%s] stopped failure: %s", d.name, err)
 		gui.PrintlnFailure("pid[%d] of app[%s] stopped", pid, d.name)
-		return err
+		return nil
 	}
 
 	ticker := time.NewTicker(100 * time.Millisecond)
@@ -484,15 +502,19 @@ func (d *Daemon) _restart() error {
 func (d *Daemon) _kill() error {
 	pids := d.getPidAndChildPid()
 	if len(pids) < 1 {
-		return fmt.Errorf("app[%s] not running", d.name)
+		debug.Erro("app[%s] not running", d.name)
+		gui.PrintlnFailure("app[%s] killed", d.name)
+		return nil
 	}
 
-	var err error
 	for _, pid := range pids {
-		err = syscall.Kill(pid, syscall.SIGKILL)
+		if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
+			debug.Erro("pid[%d] of app[%s] killed failure", pid, d.name)
+		}
 	}
 
-	return err
+	gui.PrintlnFailure("app[%s] killed", d.name)
+	return nil
 }
 
 func (d *Daemon) _runCommand(command string) error {
