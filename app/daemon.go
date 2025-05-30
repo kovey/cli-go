@@ -69,7 +69,6 @@ func NewDaemon(name string) *Daemon {
 	d.internalSig = make(chan bool, 1)
 	if ok, err := strconv.ParseBool(os.Getenv(Ko_Cli_Daemon_Background)); err == nil {
 		d.isBackground = ok
-		gui.Background()
 	}
 	for _, arg := range os.Args {
 		if arg == ko_command_daemon_arg && d.isBackground {
@@ -388,6 +387,7 @@ func (d *Daemon) _runDaemon() error {
 	}()
 
 	ticker := time.NewTicker(1 * time.Second)
+	fmt.Print("starting.")
 	<-ticker.C
 	fmt.Print(".")
 	<-ticker.C
@@ -452,7 +452,6 @@ func (d *Daemon) _reload() error {
 		return nil
 	}
 
-	gui.PrintlnOk("app[%s] reloaded", d.name)
 	return nil
 }
 
@@ -473,6 +472,7 @@ func (d *Daemon) _stop() error {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
+	fmt.Print("stopping.")
 	count := 0
 	for {
 		<-ticker.C
