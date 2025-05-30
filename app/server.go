@@ -20,9 +20,14 @@ type ServInterface interface {
 	Panic(AppInterface)
 	Usage()
 	PidFile(AppInterface) string
+	Version() string
 }
 
 type ServBase struct {
+}
+
+func (s *ServBase) Version() string {
+	return "0.0.0"
 }
 
 func (s *ServBase) AsyncLog(a AppInterface) {

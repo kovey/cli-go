@@ -21,16 +21,18 @@ import (
 )
 
 const (
-	Ko_Cli_Daemon_Background = "KO_CLI_DAEMON_BACKGROUND"
-	Ko_Command_Start         = "start"
-	Ko_Command_Reload        = "reload"
-	Ko_Command_Stop          = "stop"
-	Ko_Command_Kill          = "kill"
-	Ko_Command_Restart       = "restart"
-	Ko_Command_Daemon        = "daemon"
-	ko_command_daemon_arg    = "--daemon"
-	Ko_Command_Help          = "help"
-	ko_command_help_arg      = "h"
+	Ko_Cli_Daemon_Background    = "KO_CLI_DAEMON_BACKGROUND"
+	Ko_Command_Start            = "start"
+	Ko_Command_Reload           = "reload"
+	Ko_Command_Stop             = "stop"
+	Ko_Command_Kill             = "kill"
+	Ko_Command_Restart          = "restart"
+	Ko_Command_Daemon           = "daemon"
+	ko_command_daemon_arg       = "--daemon"
+	Ko_Command_Help             = "help"
+	ko_command_help_arg         = "h"
+	ko_command_version_arg      = "v"
+	ko_command_version_long_arg = "version"
 )
 
 var Err_App_Init = errors.New("app init failure")
@@ -94,8 +96,14 @@ func NewDaemon(name string) *Daemon {
 	_commanLine.FlagArg(Ko_Command_Restart, fmt.Sprintf("restart app[%s]", name), 0)
 	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("start app[%s] with daemon mode", name), Ko_Command_Start)
 	_commanLine.FlagNonValueLong(Ko_Command_Daemon, fmt.Sprintf("restart app[%s] and runned with daemon mode", name), Ko_Command_Restart)
+	d._version()
 	d._help()
 	return d
+}
+
+func (d *Daemon) _version() {
+	_commanLine.FlagNonValue(ko_command_version_arg, fmt.Sprintf("show app[%s] version", _commanLine.help.AppName))
+	_commanLine.FlagNonValueLong(ko_command_version_long_arg, fmt.Sprintf("show app[%s] version", _commanLine.help.AppName))
 }
 
 func (d *Daemon) _help() {
@@ -518,6 +526,14 @@ func (d *Daemon) _kill() error {
 	return nil
 }
 
+func (d *Daemon) _showVersion() {
+	if d.serv == nil {
+		return
+	}
+
+	fmt.Printf("app[%s] version: %s\r\n", d.name, d.serv.Version())
+}
+
 func (d *Daemon) _runCommand(command string) error {
 	switch command {
 	case Ko_Command_Start:
@@ -549,6 +565,17 @@ func (d *Daemon) Run() error {
 	}
 
 	_commanLine.Parse(os.Args[1:])
+	if !d.isBackground {
+		if flag := _commanLine.Get(ko_command_version_arg); flag.has {
+			d._showVersion()
+			return nil
+		}
+		if flag := _commanLine.Get(ko_command_version_long_arg); flag.has {
+			d._showVersion()
+			return nil
+		}
+	}
+
 	method := Ko_Command_Start
 	if _commanLine.hasHelp() {
 		method = Ko_Command_Help
