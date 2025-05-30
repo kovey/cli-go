@@ -36,6 +36,7 @@ const (
 var Err_App_Init = errors.New("app init failure")
 var Err_App_Run = errors.New("app run failure")
 var Err_Not_Restart = errors.New("app not restart")
+var Err_App_Process_Exit_Unexpected = errors.New("app run process exit unexpected")
 
 type Daemon struct {
 	pid          int
@@ -244,6 +245,9 @@ func (d *Daemon) runChild() {
 	if err := d.cmd.Wait(); err != nil {
 		debug.Erro("wait child error: %s", err)
 		d.internalSig <- true
+		if d.childRunErr == nil {
+			d.childRunErr = Err_App_Process_Exit_Unexpected
+		}
 		return
 	}
 
@@ -354,6 +358,30 @@ func (d *Daemon) runApp() error {
 	return d.childRunErr
 }
 
+func (d *Daemon) _runDaemon() error {
+	if err := d.doRun(); err != nil {
+		gui.PrintlnFailure("app[%s] started", d.name)
+		return fmt.Errorf("run background process error: %s", err)
+	}
+
+	go func() {
+		if err := d.cmd.Wait(); err != nil {
+			gui.PrintlnFailure("app[%s] started", d.name)
+			os.Exit(0)
+		}
+	}()
+
+	ticker := time.NewTicker(1 * time.Second)
+	<-ticker.C
+	fmt.Print(".")
+	<-ticker.C
+	fmt.Println(".")
+	ticker.Stop()
+	gui.PrintlnOk("pid[%d] of app[%s] started", d.childPid, d.name)
+	os.Exit(0)
+	return nil
+}
+
 func (d *Daemon) _run(commands ...string) error {
 	if f := _commanLine.Get(append(commands, Ko_Command_Daemon)...); f == nil || !f.has {
 		err := d.runApp()
@@ -376,13 +404,7 @@ func (d *Daemon) _run(commands ...string) error {
 	}
 
 	if !d.isBackground {
-		if err := d.doRun(); err != nil {
-			gui.PrintlnFailure("app[%s] started", d.name)
-			return fmt.Errorf("run background process error: %s", err)
-		}
-
-		gui.PrintlnOk("pid[%d] of app[%s] started", d.childPid, d.name)
-		os.Exit(0)
+		return d._runDaemon()
 	}
 
 	defer func() {
@@ -406,7 +428,7 @@ func (d *Daemon) _run(commands ...string) error {
 	go d.runChild()
 	d.listen()
 	d.wait.Wait()
-	return nil
+	return d.childRunErr
 }
 
 func (d *Daemon) _reload() error {
@@ -433,9 +455,15 @@ func (d *Daemon) _stop() error {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
+	count := 0
 	for {
 		<-ticker.C
+		count++
+		if count%10 == 0 {
+			fmt.Print(".")
+		}
 		if err := syscall.Kill(pid, 0); err != nil {
+			fmt.Println(".")
 			break
 		}
 	}
@@ -467,6 +495,26 @@ func (d *Daemon) _kill() error {
 	return err
 }
 
+func (d *Daemon) _runCommand(command string) error {
+	switch command {
+	case Ko_Command_Start:
+		return d._run(command)
+	case Ko_Command_Reload:
+		return d._reload()
+	case Ko_Command_Stop:
+		return d._stop()
+	case Ko_Command_Kill:
+		return d._kill()
+	case Ko_Command_Restart:
+		return d._restart()
+	case Ko_Command_Help:
+		_commanLine.Help()
+		return nil
+	default:
+		return d._run(_commanLine.AllArgName()...)
+	}
+}
+
 func (d *Daemon) Run() error {
 	if d.serv == nil {
 		return fmt.Errorf("serv not init")
@@ -487,23 +535,12 @@ func (d *Daemon) Run() error {
 		}
 	}
 
-	switch method {
-	case Ko_Command_Start:
-		return d._run(method)
-	case Ko_Command_Reload:
-		return d._reload()
-	case Ko_Command_Stop:
-		return d._stop()
-	case Ko_Command_Kill:
-		return d._kill()
-	case Ko_Command_Restart:
-		return d._restart()
-	case Ko_Command_Help:
-		_commanLine.Help()
-		return nil
-	default:
-		return d._run(_commanLine.AllArgName()...)
+	err := d._runCommand(method)
+	if err == Err_App_Process_Exit_Unexpected {
+		os.Exit(1)
 	}
+
+	return err
 }
 
 func (d *Daemon) doRun() error {
