@@ -366,7 +366,6 @@ func (d *Daemon) _runDaemon() error {
 		return nil
 	}
 
-	d.pidFile = d.serv.PidFile(d)
 	if util.IsFile(d.pidFile) {
 		debug.Erro("app[%s] is running", d.name)
 		gui.PrintlnFailure("app[%s] started", d.name)
@@ -431,6 +430,7 @@ func (d *Daemon) _run(commands ...string) error {
 		}
 	}()
 
+	d.pidFile = d.serv.PidFile(d)
 	d.wait.Add(1)
 	go d.runChild()
 	d.listen()
@@ -513,7 +513,8 @@ func (d *Daemon) _kill() error {
 		}
 	}
 
-	gui.PrintlnFailure("app[%s] killed", d.name)
+	gui.PrintlnOk("app[%s] killed", d.name)
+	os.Remove(d.pidFile)
 	return nil
 }
 
