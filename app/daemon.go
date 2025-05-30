@@ -409,6 +409,7 @@ func (d *Daemon) _run(commands ...string) error {
 		return err
 	}
 
+	d.pidFile = d.serv.PidFile(d)
 	if !d.isBackground {
 		return d._runDaemon()
 	}
@@ -430,7 +431,6 @@ func (d *Daemon) _run(commands ...string) error {
 		}
 	}()
 
-	d.pidFile = d.serv.PidFile(d)
 	d.wait.Add(1)
 	go d.runChild()
 	d.listen()
