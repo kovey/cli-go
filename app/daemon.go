@@ -531,7 +531,14 @@ func (d *Daemon) _showVersion() {
 		return
 	}
 
-	fmt.Printf("app[%s] version: %s\r\n", d.name, d.serv.Version())
+	tb := gui.NewTable()
+	tb.Add(0, "App Name")
+	tb.Add(0, "Version")
+	tb.Add(0, "Author")
+	tb.Add(1, d.name)
+	tb.Add(1, d.serv.Version())
+	tb.Add(1, d.serv.Author())
+	tb.Show()
 }
 
 func (d *Daemon) _runCommand(command string) error {

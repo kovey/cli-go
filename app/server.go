@@ -21,6 +21,7 @@ type ServInterface interface {
 	Usage()
 	PidFile(AppInterface) string
 	Version() string
+	Author() string
 }
 
 type ServBase struct {
@@ -80,4 +81,8 @@ func (s *ServBase) Panic(a AppInterface) {
 
 func (s *ServBase) Usage() {
 	PrintDefaults()
+}
+
+func (s *ServBase) Author() string {
+	return "kovey"
 }
