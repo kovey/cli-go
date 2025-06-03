@@ -7,6 +7,13 @@ import (
 	"github.com/kovey/debug-go/debug"
 )
 
+type CleanFlag byte
+
+const (
+	Clean_Help    CleanFlag = 1
+	Clean_Version CleanFlag = 1 << 1
+)
+
 func init() {
 	loadEnv(time.Now())
 }
@@ -22,7 +29,9 @@ type AppInterface interface {
 	FlagArg(name string, comment string, parents ...string)
 	Arg(index int, t Type) (*Flag, error)
 	UsageWhenErr()
+	// @deprecated
 	CleanCommandLine(isCleanHelp bool)
+	CleanCommandLineWith(flags CleanFlag)
 	RunChild(func(AppInterface))
 }
 

@@ -1,6 +1,8 @@
 package app
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestHelp(t *testing.T) {
 	h := NewHelp("test")

@@ -30,6 +30,9 @@ Use "migrate help <command>" for more information about a command.
 
 func (s *serv) Flag(a app.AppInterface) error {
 	//a.CleanCommandLine(false)
+	//a.CleanCommandLineWith(app.Clean_Help | app.Clean_Version)
+	//a.CleanCommandLineWith(app.Clean_Help)
+	//a.CleanCommandLineWith(app.Clean_Version)
 	a.FlagArg("create", "create config")
 	a.FlagArg("build", "build config", "create")
 	a.FlagArg("make", "make config", "create", "build")

@@ -121,6 +121,17 @@ func (d *Daemon) CleanCommandLine(isCleanHelp bool) {
 	d._help()
 }
 
+func (d *Daemon) CleanCommandLineWith(flags CleanFlag) {
+	_commanLine.CleanDefaults()
+	if flags&Clean_Version == 0 {
+		d._version()
+	}
+
+	if flags&Clean_Help == 0 {
+		d._help()
+	}
+}
+
 func (d *Daemon) UsageWhenErr() {
 	d.showUsage = true
 }
