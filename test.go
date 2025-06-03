@@ -33,6 +33,7 @@ func (s *serv) Flag(a app.AppInterface) error {
 	//a.CleanCommandLineWith(app.Clean_Help | app.Clean_Version)
 	//a.CleanCommandLineWith(app.Clean_Help)
 	//a.CleanCommandLineWith(app.Clean_Version)
+	//a.CleanCommandLineWith(app.Clean_Defalut)
 	a.FlagArg("create", "create config")
 	a.FlagArg("build", "build config", "create")
 	a.FlagArg("make", "make config", "create", "build")

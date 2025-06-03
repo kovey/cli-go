@@ -10,6 +10,7 @@ import (
 type CleanFlag byte
 
 const (
+	Clean_Defalut CleanFlag = 0
 	Clean_Help    CleanFlag = 1
 	Clean_Version CleanFlag = 1 << 1
 )
