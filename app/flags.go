@@ -13,6 +13,7 @@ func (f *Flags) Clean() {
 }
 
 func (f *Flags) Add(flag *Flag) {
+	flag.checkDefault()
 	if _, ok := f.flags[flag.name]; !ok {
 		f.flags[flag.name] = flag
 	}

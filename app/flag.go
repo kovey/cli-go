@@ -40,6 +40,31 @@ func (f *Flag) IsInput() bool {
 	return f.has
 }
 
+func (f *Flag) checkDefault() {
+	if !f.has {
+		return
+	}
+
+	switch f.t {
+	case TYPE_BOOL:
+		if _, ok := f.def.(bool); !ok {
+			panic(fmt.Sprintf("%s default value not bool", f.name))
+		}
+	case TYPE_INT:
+		if _, ok := f.def.(int); !ok {
+			panic(fmt.Sprintf("%s default value not int", f.name))
+		}
+	case TYPE_FLOAT:
+		if _, ok := f.def.(float64); !ok {
+			panic(fmt.Sprintf("%s default value not float64", f.name))
+		}
+	case TYPE_STRING:
+		if _, ok := f.def.(string); !ok {
+			panic(fmt.Sprintf("%s default value not string", f.name))
+		}
+	}
+}
+
 func (f *Flag) _value(typ Type) any {
 	if !f.hasValue {
 		panic(fmt.Sprintf("%s has not value", f.name))
