@@ -11,6 +11,7 @@ const (
 	TYPE_INT    Type = 1
 	TYPE_STRING Type = 2
 	TYPE_BOOL   Type = 3
+	TYPE_FLOAT  Type = 4
 )
 
 type Flag struct {
@@ -39,75 +40,66 @@ func (f *Flag) IsInput() bool {
 	return f.has
 }
 
+func (f *Flag) _value(typ Type) any {
+	if !f.hasValue {
+		panic(fmt.Sprintf("%s has not value", f.name))
+	}
+
+	if f.t != typ {
+		panic(fmt.Sprintf("%s type error", f.name))
+	}
+
+	if !f.has {
+		if f.def == nil {
+			panic(fmt.Sprintf("%s not input value", f.name))
+		}
+
+		return f.def
+	}
+
+	switch f.t {
+	case TYPE_BOOL:
+		tmp, err := strconv.ParseBool(f.value)
+		if err != nil {
+			panic(err)
+		}
+
+		return tmp
+	case TYPE_FLOAT:
+		tmp, err := strconv.ParseFloat(f.value, 64)
+		if err != nil {
+			panic(err)
+		}
+
+		return tmp
+	case TYPE_INT:
+		tmp, err := strconv.Atoi(f.value)
+		if err != nil {
+			panic(err)
+		}
+
+		return tmp
+	default:
+		return f.value
+	}
+}
+
 func (f *Flag) String() string {
 	if f.isArg {
 		return f.name
 	}
 
-	if !f.hasValue {
-		panic(fmt.Sprintf("%s has not value", f.name))
-	}
-
-	if f.t != TYPE_STRING {
-		return ""
-	}
-
-	if !f.has {
-		if f.def == nil {
-			panic(fmt.Sprintf("%s not input value", f.name))
-		}
-		return f.def.(string)
-	}
-
-	return f.value
+	return f._value(TYPE_STRING).(string)
 }
 
 func (f *Flag) Int() int {
-	if !f.hasValue {
-		panic(fmt.Sprintf("%s has not value", f.name))
-	}
-
-	if f.t != TYPE_INT {
-		return 0
-	}
-
-	if !f.has {
-		if f.def == nil {
-			panic(fmt.Sprintf("%s not input value", f.name))
-		}
-
-		return f.def.(int)
-	}
-
-	tmp, err := strconv.Atoi(f.value)
-	if err != nil {
-		panic(err)
-	}
-
-	return tmp
+	return f._value(TYPE_INT).(int)
 }
 
 func (f *Flag) Bool() bool {
-	if !f.hasValue {
-		panic(fmt.Sprintf("%s has not value", f.name))
-	}
+	return f._value(TYPE_BOOL).(bool)
+}
 
-	if f.t != TYPE_BOOL {
-		return false
-	}
-
-	if !f.has {
-		if f.def == nil {
-			panic(fmt.Sprintf("%s not input value", f.name))
-		}
-
-		return f.def.(bool)
-	}
-
-	tmp, err := strconv.ParseBool(f.value)
-	if err != nil {
-		panic(err)
-	}
-
-	return tmp
+func (f *Flag) Float() float64 {
+	return f._value(TYPE_FLOAT).(float64)
 }
