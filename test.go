@@ -78,11 +78,6 @@ func (s *serv) Reload(a app.AppInterface) error {
 	return nil
 }
 
-func (s *serv) Shutdown(a app.AppInterface) error {
-	debug.Info("[%s] shutdown", a.Name())
-	return nil
-}
-
 func testServ() {
 	cli := app.NewApp("test")
 	cli.SetDebugLevel(debug.Debug_Info)

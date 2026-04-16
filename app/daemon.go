@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/kovey/cli-go/env"
 	"github.com/kovey/cli-go/gui"
 	"github.com/kovey/cli-go/util"
-	"github.com/kovey/debug-go/async"
 	"github.com/kovey/debug-go/debug"
 	"github.com/kovey/debug-go/run"
 )
@@ -55,8 +55,9 @@ type Daemon struct {
 	showUsage    bool
 	check        *time.Ticker
 	workdir      string
-	internalSig  chan bool
 	childRunErr  error
+	ctx          context.Context
+	cancel       context.CancelFunc
 }
 
 func NewDaemon(name string) *Daemon {
@@ -68,7 +69,7 @@ func NewDaemon(name string) *Daemon {
 	}
 
 	d := &Daemon{name: name, wait: sync.WaitGroup{}, sig: make(chan os.Signal, 1), openChild: make(chan bool, 1), isBackground: false, check: time.NewTicker(1 * time.Second)}
-	d.internalSig = make(chan bool, 1)
+	d.ctx, d.cancel = context.WithCancel(context.Background())
 	if ok, err := strconv.ParseBool(os.Getenv(Ko_Cli_Daemon_Background)); err == nil {
 		d.isBackground = ok
 	}
@@ -99,6 +100,10 @@ func NewDaemon(name string) *Daemon {
 	d._version()
 	d._help()
 	return d
+}
+
+func (d *Daemon) term() {
+	d.cancel()
 }
 
 func (d *Daemon) _version() {
@@ -247,6 +252,10 @@ func (d *Daemon) SetDebugLevel(t debug.DebugType) {
 	debug.SetLevel(t)
 }
 
+func (d *Daemon) Context() context.Context {
+	return d.ctx
+}
+
 func (d *Daemon) runChild() {
 	defer d.wait.Done()
 	d.childPid = -1
@@ -262,7 +271,6 @@ func (d *Daemon) runChild() {
 
 	if err := d.cmd.Wait(); err != nil {
 		debug.Erro("wait child error: %s", err)
-		d.internalSig <- true
 		if d.childRunErr == nil {
 			d.childRunErr = Err_App_Process_Exit_Unexpected
 		}
@@ -282,7 +290,7 @@ func (d *Daemon) listen() {
 
 	for {
 		select {
-		case <-d.internalSig:
+		case <-d.ctx.Done():
 			return
 		case now := <-d.check.C:
 			loadEnv(now)
@@ -293,23 +301,24 @@ func (d *Daemon) listen() {
 				}
 				switch s {
 				case os.Interrupt, syscall.SIGTERM:
+					d.term()
 					return
 				}
 			}
 
-			if d.childPid == 0 && d.serv != nil {
+			if d.childPid == 0 {
 				switch s {
 				case os.Interrupt, syscall.SIGTERM:
-					if err := d.serv.Shutdown(d); err != nil {
-						debug.Erro("app[%s] stop failure, error: %s", d.name, err)
-					}
+					d.term()
 					return
 				case syscall.SIGUSR1:
-					if err := d.serv.Reload(d); err != nil {
-						debug.Erro("app[%s] reload failure, error: %s", d.name, err)
-						gui.PrintlnFailure("app[%s] reloaded", d.name)
-					} else {
-						gui.PrintlnOk("app[%s] reloaded", d.name)
+					if d.serv != nil {
+						if err := d.serv.Reload(d); err != nil {
+							debug.Erro("app[%s] reload failure, error: %s", d.name, err)
+							gui.PrintlnFailure("app[%s] reloaded", d.name)
+						} else {
+							gui.PrintlnOk("app[%s] reloaded", d.name)
+						}
 					}
 				}
 			}
@@ -320,18 +329,8 @@ func (d *Daemon) listen() {
 	}
 }
 
-func (d *Daemon) _runAppEnd() {
-	if !d.isBackground {
-		return
-	}
-
-	d.internalSig <- true
-}
-
 func (d *Daemon) _runApp() {
 	defer d.wait.Done()
-	defer d._runAppEnd()
-	defer async.Stop()
 	defer func() {
 		err := recover()
 		if err == nil {

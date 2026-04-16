@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"time"
 
 	"github.com/kovey/cli-go/env"
@@ -34,6 +35,7 @@ type AppInterface interface {
 	CleanCommandLine(isCleanHelp bool)
 	CleanCommandLineWith(flags CleanFlag)
 	RunChild(func(AppInterface))
+	Context() context.Context
 }
 
 type App struct {

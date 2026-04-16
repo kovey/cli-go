@@ -15,7 +15,6 @@ type ServInterface interface {
 	Init(AppInterface) error
 	Run(AppInterface) error
 	AsyncLog(AppInterface)
-	Shutdown(AppInterface) error
 	Reload(AppInterface) error
 	Panic(AppInterface)
 	Usage()
@@ -52,7 +51,7 @@ func (s *ServBase) AsyncLog(a AppInterface) {
 	}
 
 	a.RunChild(func(ai AppInterface) {
-		async.Listen()
+		async.Listen(ai.Context())
 	})
 }
 
