@@ -68,6 +68,9 @@ func (s *serv) Run(a app.AppInterface) error {
 		debug.Info("to-user: %s", f.String())
 	}
 
+	a.RunChild(func(ai app.AppInterface) {
+		panic("run child")
+	})
 	time.Sleep(10 * time.Second)
 	//panic("run error")
 	return nil

@@ -331,6 +331,7 @@ func (d *Daemon) listen() {
 
 func (d *Daemon) _runApp() {
 	defer d.wait.Done()
+	defer d.term()
 	defer func() {
 		err := recover()
 		if err == nil {
@@ -620,9 +621,36 @@ func (d *Daemon) doRun() error {
 	return err
 }
 
+func (d *Daemon) _call(backoff, maxBackoff time.Duration, call func(a AppInterface)) {
+	defer func() {
+		if err := recover(); err != nil {
+			run.Panic(err)
+			time.Sleep(backoff)
+			backoff *= 2
+			if backoff > maxBackoff {
+				backoff = maxBackoff
+			}
+			return
+		}
+
+		backoff = 5 * time.Second
+	}()
+
+	call(d)
+}
+
 func (d *Daemon) _runChild(call func(a AppInterface)) {
 	defer d.wait.Done()
-	call(d)
+	backoff := 5 * time.Second
+	maxBackoff := 60 * time.Second
+	for {
+		select {
+		case <-d.ctx.Done():
+			return
+		default:
+		}
+		d._call(backoff, maxBackoff, call)
+	}
 }
 
 func (d *Daemon) RunChild(call func(a AppInterface)) {
