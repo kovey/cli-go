@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	//testCallBack()
+	// testCallBack()
 	testServ()
 }
 
@@ -29,11 +29,11 @@ Use "migrate help <command>" for more information about a command.
 **/
 
 func (s *serv) Flag(a app.AppInterface) error {
-	//a.CleanCommandLine(false)
-	//a.CleanCommandLineWith(app.Clean_Help | app.Clean_Version)
-	//a.CleanCommandLineWith(app.Clean_Help)
-	//a.CleanCommandLineWith(app.Clean_Version)
-	//a.CleanCommandLineWith(app.Clean_Defalut)
+	// a.CleanCommandLine(false)
+	// a.CleanCommandLineWith(app.Clean_Help | app.Clean_Version)
+	// a.CleanCommandLineWith(app.Clean_Help)
+	// a.CleanCommandLineWith(app.Clean_Version)
+	// a.CleanCommandLineWith(app.Clean_Defalut)
 	a.FlagArg("create", "create config")
 	a.FlagArg("build", "build config", "create")
 	a.FlagArg("make", "make config", "create", "build")
@@ -49,7 +49,7 @@ func (s *serv) Flag(a app.AppInterface) error {
 
 func (s *serv) Init(a app.AppInterface) error {
 	debug.Info("[%s] init", a.Name())
-	//return fmt.Errorf("init error")
+	// return fmt.Errorf("init error")
 	return nil
 }
 
@@ -68,11 +68,12 @@ func (s *serv) Run(a app.AppInterface) error {
 		debug.Info("to-user: %s", f.String())
 	}
 
-	a.RunChild(func(ai app.AppInterface) {
-		panic("run child")
-	})
+	// a.RunChild(func(ai app.AppInterface) {
+	// 	// panic("run child")
+	// 	debug.Info("run child")
+	// })
 	time.Sleep(10 * time.Second)
-	//panic("run error")
+	panic("run error")
 	return nil
 }
 

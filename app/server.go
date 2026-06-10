@@ -15,6 +15,7 @@ type ServInterface interface {
 	Init(AppInterface) error
 	Run(AppInterface) error
 	AsyncLog(AppInterface)
+	AsyncLogClose(AppInterface)
 	Reload(AppInterface) error
 	Panic(AppInterface)
 	Usage()
@@ -23,8 +24,7 @@ type ServInterface interface {
 	Author() string
 }
 
-type ServBase struct {
-}
+type ServBase struct{}
 
 func (s *ServBase) Version() string {
 	return "0.0.0"
@@ -53,6 +53,10 @@ func (s *ServBase) AsyncLog(a AppInterface) {
 	a.RunChild(func(ai AppInterface) {
 		async.Listen(ai.Context())
 	})
+}
+
+func (s *ServBase) AsyncLogClose(AppInterface) {
+	async.Close()
 }
 
 func (s *ServBase) PidFile(a AppInterface) string {

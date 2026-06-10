@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.9
 
 require (
-	github.com/kovey/debug-go v0.1.4
+	github.com/kovey/debug-go v0.1.8
 	golang.org/x/term v0.32.0
 )
 

@@ -35,10 +35,12 @@ const (
 	ko_command_version_long_arg = "version"
 )
 
-var Err_App_Init = errors.New("app init failure")
-var Err_App_Run = errors.New("app run failure")
-var Err_Not_Restart = errors.New("app not restart")
-var Err_App_Process_Exit_Unexpected = errors.New("app run process exit unexpected")
+var (
+	Err_App_Init                    = errors.New("app init failure")
+	Err_App_Run                     = errors.New("app run failure")
+	Err_Not_Restart                 = errors.New("app not restart")
+	Err_App_Process_Exit_Unexpected = errors.New("app run process exit unexpected")
+)
 
 type Daemon struct {
 	pid          int
@@ -265,16 +267,19 @@ func (d *Daemon) runChild() {
 		return
 	}
 
-	if err := os.WriteFile(d.pidFile, []byte(d.PidString()), 0644); err != nil {
+	if err := os.WriteFile(d.pidFile, []byte(d.PidString()), 0o644); err != nil {
 		debug.Erro("write pid file error: %s", err)
 	}
 
 	if err := d.cmd.Wait(); err != nil {
 		debug.Erro("wait child error: %s", err)
-		if d.childRunErr == nil {
-			d.childRunErr = Err_App_Process_Exit_Unexpected
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.Success() {
+			if d.childRunErr == nil {
+				d.childRunErr = Err_App_Process_Exit_Unexpected
+			}
+			return
 		}
-		return
 	}
 
 	d.openChild <- true
@@ -332,16 +337,15 @@ func (d *Daemon) listen() {
 func (d *Daemon) _runApp() {
 	defer d.wait.Done()
 	defer d.term()
+	defer d.serv.AsyncLogClose(d)
 	defer func() {
 		err := recover()
-		if err == nil {
-			debug.Info("app[%s] total run time: [%s]", d.name, GetFormatRunTime())
+		debug.Info("app[%s] total run time: [%s]", d.name, GetFormatRunTime())
+		if !run.Panic(err) {
 			return
 		}
 
-		debug.Info("app[%s] total run time: [%s]", d.name, GetFormatRunTime())
 		d.serv.Panic(d)
-		run.Panic(err)
 	}()
 
 	startTime = time.Now()
@@ -621,7 +625,7 @@ func (d *Daemon) doRun() error {
 	return err
 }
 
-func (d *Daemon) _call(backoff, maxBackoff time.Duration, call func(a AppInterface)) {
+func (d *Daemon) _call(backoff, maxBackoff time.Duration, call func(a AppInterface)) (callErr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			run.Panic(err)
@@ -630,6 +634,7 @@ func (d *Daemon) _call(backoff, maxBackoff time.Duration, call func(a AppInterfa
 			if backoff > maxBackoff {
 				backoff = maxBackoff
 			}
+			callErr = errors.New("panic error")
 			return
 		}
 
@@ -637,6 +642,7 @@ func (d *Daemon) _call(backoff, maxBackoff time.Duration, call func(a AppInterfa
 	}()
 
 	call(d)
+	return callErr
 }
 
 func (d *Daemon) _runChild(call func(a AppInterface)) {
@@ -649,7 +655,9 @@ func (d *Daemon) _runChild(call func(a AppInterface)) {
 			return
 		default:
 		}
-		d._call(backoff, maxBackoff, call)
+		if err := d._call(backoff, maxBackoff, call); err == nil {
+			return
+		}
 	}
 }
 
