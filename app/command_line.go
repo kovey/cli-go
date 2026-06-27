@@ -50,7 +50,7 @@ func (c *CommandLine) _flag(name, comment string, def any, t Type, index int, ha
 	if len(parents) > 0 {
 		parent = c.flags.Get(parents...)
 		if parent == nil {
-			debug.Warn("parent not found: %s", name)
+			debug.Warn("parent not found for flag[%s], parent chain: %v", name, parents)
 			return
 		}
 
@@ -203,6 +203,10 @@ func (c *CommandLine) parseShort() (bool, error) {
 	commands := append(c.AllArgName(), name)
 	flag := c.flags.Get(commands...)
 	if flag == nil {
+		// Fallback: try root-level lookup
+		flag = c.flags.Get(name)
+	}
+	if flag == nil {
 		return false, fmt.Errorf("arg[%s] not defined", name)
 	}
 
@@ -242,6 +246,9 @@ func (c *CommandLine) parseLong() (bool, error) {
 		commands := append(c.AllArgName(), arg)
 		flag := c.flags.Get(commands...)
 		if flag == nil {
+			flag = c.flags.Get(arg)
+		}
+		if flag == nil {
 			return false, fmt.Errorf("arg[%s] not defined", arg)
 		}
 
@@ -264,6 +271,9 @@ func (c *CommandLine) parseLong() (bool, error) {
 	}
 	commands := append(c.AllArgName(), info[0])
 	flag := c.flags.Get(commands...)
+	if flag == nil {
+		flag = c.flags.Get(info[0])
+	}
 	if flag == nil {
 		return false, fmt.Errorf("arg[%s] not defined", info[0])
 	}
@@ -303,6 +313,9 @@ func (c *CommandLine) parseOne() (bool, error) {
 
 	commands := append(c.AllArgName(), c.args[0])
 	flag := c.flags.Get(commands...)
+	if flag == nil {
+		flag = c.flags.Get(c.args[0])
+	}
 	if flag == nil {
 		return false, fmt.Errorf("arg[%s] not defined", c.args[0])
 	}

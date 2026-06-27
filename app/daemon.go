@@ -461,15 +461,16 @@ func (d *Daemon) _run(commands ...string) error {
 func (d *Daemon) _reload() error {
 	pid := d.getPid()
 	if pid < 1 {
-		debug.Erro("app[%s] not running", d.name)
+		err := fmt.Errorf("app[%s] not running", d.name)
+		debug.Erro(err.Error())
 		gui.PrintlnFailure("app[%s] reloaded", d.name)
-		return nil
+		return err
 	}
 
 	if err := syscall.Kill(pid, syscall.SIGUSR1); err != nil {
 		debug.Erro("app[%s] reloaded failure: %s", d.name, err)
 		gui.PrintlnFailure("app[%s] reloaded", d.name)
-		return nil
+		return err
 	}
 
 	return nil
@@ -478,31 +479,42 @@ func (d *Daemon) _reload() error {
 func (d *Daemon) _stop() error {
 	pid := d.getPid()
 	if pid < 1 {
-		debug.Erro("app[%s] not running", d.name)
+		err := fmt.Errorf("app[%s] not running", d.name)
+		debug.Erro(err.Error())
 		gui.PrintlnFailure("app[%s] stopped", d.name)
-		return nil
+		return err
 	}
 
 	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
 		debug.Erro("app[%s] stopped failure: %s", d.name, err)
 		gui.PrintlnFailure("pid[%d] of app[%s] stopped", pid, d.name)
-		return nil
+		return err
 	}
 
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
+	timeout := time.NewTimer(30 * time.Second)
+	defer timeout.Stop()
 
 	fmt.Print("stopping.")
 	count := 0
+loop:
 	for {
-		<-ticker.C
-		count++
-		if count%10 == 0 {
-			fmt.Print(".")
-		}
-		if err := syscall.Kill(pid, 0); err != nil {
+		select {
+		case <-ticker.C:
+			count++
+			if count%10 == 0 {
+				fmt.Print(".")
+			}
+			if err := syscall.Kill(pid, 0); err != nil {
+				fmt.Println(".")
+				break loop
+			}
+		case <-timeout.C:
 			fmt.Println(".")
-			break
+			debug.Warn("app[%s] pid[%d] not responding to SIGTERM, sending SIGKILL", d.name, pid)
+			syscall.Kill(pid, syscall.SIGKILL)
+			break loop
 		}
 	}
 
@@ -524,15 +536,22 @@ func (d *Daemon) _restart() error {
 func (d *Daemon) _kill() error {
 	pids := d.getPidAndChildPid()
 	if len(pids) < 1 {
-		debug.Erro("app[%s] not running", d.name)
+		err := fmt.Errorf("app[%s] not running", d.name)
+		debug.Erro(err.Error())
 		gui.PrintlnFailure("app[%s] killed", d.name)
-		return nil
+		return err
 	}
 
+	var errs []string
 	for _, pid := range pids {
 		if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
 			debug.Erro("pid[%d] of app[%s] killed failure", pid, d.name)
+			errs = append(errs, fmt.Sprintf("pid[%d]: %s", pid, err.Error()))
 		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("kill errors: %s", strings.Join(errs, "; "))
 	}
 
 	gui.PrintlnOk("app[%s] killed", d.name)
@@ -624,20 +643,20 @@ func (d *Daemon) doRun() error {
 	return err
 }
 
-func (d *Daemon) _call(backoff, maxBackoff time.Duration, call func(a AppInterface)) (callErr error) {
+func (d *Daemon) _call(backoff *time.Duration, maxBackoff time.Duration, call func(a AppInterface)) (callErr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			run.Panic(err)
-			time.Sleep(backoff)
-			backoff *= 2
-			if backoff > maxBackoff {
-				backoff = maxBackoff
+			time.Sleep(*backoff)
+			*backoff *= 2
+			if *backoff > maxBackoff {
+				*backoff = maxBackoff
 			}
 			callErr = errors.New("panic error")
 			return
 		}
 
-		backoff = 5 * time.Second
+		*backoff = 5 * time.Second
 	}()
 
 	call(d)
@@ -654,7 +673,7 @@ func (d *Daemon) _runChild(call func(a AppInterface)) {
 			return
 		default:
 		}
-		if err := d._call(backoff, maxBackoff, call); err == nil {
+		if err := d._call(&backoff, maxBackoff, call); err == nil {
 			return
 		}
 	}

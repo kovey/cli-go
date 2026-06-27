@@ -102,8 +102,9 @@ func parse(line string) error {
 	key := strings.Trim(info[0], trim_set)
 	value := strings.Trim(info[1], trim_set)
 	if itemCount > 2 {
-		info[1] = strings.TrimLeft(info[1], trim_set)
-		info[itemCount-1] = strings.TrimRight(info[itemCount-1], trim_set)
+		for i := 1; i < itemCount; i++ {
+			info[i] = strings.Trim(info[i], trim_set)
+		}
 		value = strings.Join(info[1:], "=")
 	}
 

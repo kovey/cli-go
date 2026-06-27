@@ -193,8 +193,8 @@ func TestLoad(t *testing.T) {
 		if !ok {
 			t.Fatal("EQ_SPACE_KEY not set")
 		}
-		if val != "val1 = val2 = val3" {
-			t.Errorf("expected 'val1 = val2 = val3', got '%s'", val)
+		if val != "val1=val2=val3" {
+			t.Errorf("expected 'val1=val2=val3', got '%s'", val)
 		}
 		os.Unsetenv("EQ_SPACE_KEY")
 	})

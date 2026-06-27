@@ -770,8 +770,8 @@ func TestCommandLineCleanDefaults(t *testing.T) {
 
 func TestCleanFlagBitmask(t *testing.T) {
 	t.Run("constants", func(t *testing.T) {
-		if Clean_Defalut != 0 {
-			t.Errorf("Clean_Defalut = %d, want 0", Clean_Defalut)
+		if Clean_Default != 0 {
+			t.Errorf("Clean_Default = %d, want 0", Clean_Default)
 		}
 		if Clean_Help != 1 {
 			t.Errorf("Clean_Help = %d, want 1", Clean_Help)
@@ -796,8 +796,8 @@ func TestCleanFlagBitmask(t *testing.T) {
 		if combined&Clean_Version == 0 {
 			t.Error("combined should have Clean_Version bit set")
 		}
-		if combined&Clean_Defalut != 0 {
-			t.Error("Clean_Defalut is 0, AND with anything should be 0")
+		if combined&Clean_Default != 0 {
+			t.Error("Clean_Default is 0, AND with anything should be 0")
 		}
 	})
 
@@ -1237,8 +1237,8 @@ func TestAppName(t *testing.T) {
 }
 
 func TestCleanFlagConstants(t *testing.T) {
-	if Clean_Defalut != 0 {
-		t.Errorf("Clean_Defalut = %d, want 0", Clean_Defalut)
+	if Clean_Default != 0 {
+		t.Errorf("Clean_Default = %d, want 0", Clean_Default)
 	}
 	if Clean_Help != 1 {
 		t.Errorf("Clean_Help = %d, want 1", Clean_Help)
@@ -1853,10 +1853,10 @@ func TestAppDaemonRunCommandReload(t *testing.T) {
 	s := &testServ{}
 	app.SetServ(s)
 	// _runCommand with Ko_Command_Reload calls _reload()
-	// getPid returns -1 (no pid file), so _reload returns early
+	// getPid returns -1 (no pid file), so _reload returns an error
 	err := app._runCommand(Ko_Command_Reload)
-	if err != nil {
-		t.Errorf("_runCommand(reload) should not error, got: %v", err)
+	if err == nil {
+		t.Error("_runCommand(reload) should return error when app is not running")
 	}
 }
 
@@ -1865,10 +1865,10 @@ func TestAppDaemonRunCommandStop(t *testing.T) {
 	s := &testServ{}
 	app.SetServ(s)
 	// _runCommand with Ko_Command_Stop calls _stop()
-	// getPid returns -1 (no pid file), so _stop returns early
+	// getPid returns -1 (no pid file), so _stop returns an error
 	err := app._runCommand(Ko_Command_Stop)
-	if err != nil {
-		t.Errorf("_runCommand(stop) should not error, got: %v", err)
+	if err == nil {
+		t.Error("_runCommand(stop) should return error when app is not running")
 	}
 }
 
@@ -1877,10 +1877,10 @@ func TestAppDaemonRunCommandKill(t *testing.T) {
 	s := &testServ{}
 	app.SetServ(s)
 	// _runCommand with Ko_Command_Kill calls _kill()
-	// getPidAndChildPid returns nil (no pid file), so _kill returns early
+	// getPidAndChildPid returns nil (no pid file), so _kill returns an error
 	err := app._runCommand(Ko_Command_Kill)
-	if err != nil {
-		t.Errorf("_runCommand(kill) should not error, got: %v", err)
+	if err == nil {
+		t.Error("_runCommand(kill) should return error when app is not running")
 	}
 }
 
@@ -1888,10 +1888,10 @@ func TestAppDaemonReloadNoPid(t *testing.T) {
 	app := NewApp("test-reload-nopid")
 	s := &testServ{}
 	app.SetServ(s)
-	// _reload with no pid file should return early
+	// _reload with no pid file should return an error
 	err := app._reload()
-	if err != nil {
-		t.Errorf("_reload() should not error, got: %v", err)
+	if err == nil {
+		t.Error("_reload() should return error when app is not running")
 	}
 }
 
@@ -1899,10 +1899,10 @@ func TestAppDaemonStopNoPid(t *testing.T) {
 	app := NewApp("test-stop-nopid")
 	s := &testServ{}
 	app.SetServ(s)
-	// _stop with no pid file should return early
+	// _stop with no pid file should return an error
 	err := app._stop()
-	if err != nil {
-		t.Errorf("_stop() should not error, got: %v", err)
+	if err == nil {
+		t.Error("_stop() should return error when app is not running")
 	}
 }
 
@@ -1910,10 +1910,10 @@ func TestAppDaemonKillNoPid(t *testing.T) {
 	app := NewApp("test-kill-nopid")
 	s := &testServ{}
 	app.SetServ(s)
-	// _kill with no pid file should return early
+	// _kill with no pid file should return an error
 	err := app._kill()
-	if err != nil {
-		t.Errorf("_kill() should not error, got: %v", err)
+	if err == nil {
+		t.Error("_kill() should return error when app is not running")
 	}
 }
 
