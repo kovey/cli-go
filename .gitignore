@@ -1,5 +1,6 @@
 .DS_Store
 .env
+.claude
 test
 test.log
 test.run.*
@@ -9,5 +10,6 @@ examples/*/mydaemon
 examples/*/basic
 # Coverage
 coverage.out
+coverage.html
 # Bug report (generated)
 BUGS.md
