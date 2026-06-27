@@ -1772,8 +1772,9 @@ type testServ struct {
 	ServBase
 }
 
-func (t *testServ) Init(AppInterface) error { return nil }
-func (t *testServ) Run(AppInterface) error  { return nil }
+func (t *testServ) Init(AppInterface) error          { return nil }
+func (t *testServ) Run(AppInterface) error           { return nil }
+func (t *testServ) AsyncLogClose(AppInterface)       {} // override to prevent async.Close panic
 
 func TestAppDaemonSetServ(t *testing.T) {
 	app := NewApp("test-setserv")
@@ -1802,6 +1803,10 @@ func TestAppDaemonGetPidAndChildPidNotFound(t *testing.T) {
 }
 
 func TestAppDaemonCleanCommandLineBothPaths(t *testing.T) {
+	app := NewApp("test-clean2")
+	app.CleanCommandLine(true)
+	app.CleanCommandLine(false)
+}
 
 func TestServBaseAsyncLogEarlyReturn(t *testing.T) {
 	s := &ServBase{}
@@ -1817,5 +1822,123 @@ func TestServBasePidFileDefault(t *testing.T) {
 	}
 	if !strings.Contains(path, app.Name()) {
 		t.Errorf("PidFile = %q, should contain app name %q", path, app.Name())
+	}
+}
+
+func TestAppDaemonShowVersion(t *testing.T) {
+	app := NewApp("test-showversion")
+	s := &testServ{}
+	app.SetServ(s)
+	// _showVersion should not panic with a valid serv set
+	app._showVersion()
+}
+
+func TestAppDaemonShowVersionNilServ(t *testing.T) {
+	app := NewApp("test-showversion-nil")
+	// _showVersion should return early when serv is nil
+	app._showVersion()
+}
+
+func TestAppDaemonRunCommandHelp(t *testing.T) {
+	app := NewApp("test-cmd-help")
+	// _runCommand with Ko_Command_Help should call _commanLine.Help()
+	err := app._runCommand(Ko_Command_Help)
+	if err != nil {
+		t.Errorf("_runCommand(help) should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonRunCommandReload(t *testing.T) {
+	app := NewApp("test-cmd-reload")
+	s := &testServ{}
+	app.SetServ(s)
+	// _runCommand with Ko_Command_Reload calls _reload()
+	// getPid returns -1 (no pid file), so _reload returns early
+	err := app._runCommand(Ko_Command_Reload)
+	if err != nil {
+		t.Errorf("_runCommand(reload) should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonRunCommandStop(t *testing.T) {
+	app := NewApp("test-cmd-stop")
+	s := &testServ{}
+	app.SetServ(s)
+	// _runCommand with Ko_Command_Stop calls _stop()
+	// getPid returns -1 (no pid file), so _stop returns early
+	err := app._runCommand(Ko_Command_Stop)
+	if err != nil {
+		t.Errorf("_runCommand(stop) should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonRunCommandKill(t *testing.T) {
+	app := NewApp("test-cmd-kill")
+	s := &testServ{}
+	app.SetServ(s)
+	// _runCommand with Ko_Command_Kill calls _kill()
+	// getPidAndChildPid returns nil (no pid file), so _kill returns early
+	err := app._runCommand(Ko_Command_Kill)
+	if err != nil {
+		t.Errorf("_runCommand(kill) should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonReloadNoPid(t *testing.T) {
+	app := NewApp("test-reload-nopid")
+	s := &testServ{}
+	app.SetServ(s)
+	// _reload with no pid file should return early
+	err := app._reload()
+	if err != nil {
+		t.Errorf("_reload() should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonStopNoPid(t *testing.T) {
+	app := NewApp("test-stop-nopid")
+	s := &testServ{}
+	app.SetServ(s)
+	// _stop with no pid file should return early
+	err := app._stop()
+	if err != nil {
+		t.Errorf("_stop() should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonKillNoPid(t *testing.T) {
+	app := NewApp("test-kill-nopid")
+	s := &testServ{}
+	app.SetServ(s)
+	// _kill with no pid file should return early
+	err := app._kill()
+	if err != nil {
+		t.Errorf("_kill() should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonRunCommandStart(t *testing.T) {
+	app := NewApp("test-cmd-start")
+	s := &testServ{}
+	app.SetServ(s)
+	// _runCommand with Ko_Command_Start calls _run("start")
+	// With isBackground=false, listen() returns immediately
+	// _runApp runs in goroutine with mock serv
+	err := app._runCommand(Ko_Command_Start)
+	if err != nil {
+		t.Errorf("_runCommand(start) should not error, got: %v", err)
+	}
+}
+
+func TestAppDaemonRunCommandRestart(t *testing.T) {
+	app := NewApp("test-cmd-restart")
+	s := &testServ{}
+	app.SetServ(s)
+	// _runCommand with Ko_Command_Restart calls _restart()
+	// _restart calls _stop() (safe) then _run(Ko_Command_Restart)
+	// _run calls runApp with mock serv
+	err := app._runCommand(Ko_Command_Restart)
+	if err != nil {
+		t.Errorf("_runCommand(restart) should not error, got: %v", err)
 	}
 }
