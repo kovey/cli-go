@@ -207,7 +207,7 @@ func (c *CommandLine) parseShort() (bool, error) {
 	}
 
 	var value = ""
-	if len(c.args) >= 2 && c.args[1][0] != '-' {
+	if len(c.args) >= 2 && len(c.args[1]) > 0 && c.args[1][0] != '-' {
 		if !flag.hasValue {
 			return false, fmt.Errorf("arg[%s] has not value", c.args[0])
 		}
@@ -255,7 +255,10 @@ func (c *CommandLine) parseLong() (bool, error) {
 		return len(c.args) == 0, nil
 	}
 
-	info := strings.Split(arg, "=")
+	info := strings.SplitN(arg, "=", 2)
+	if len(info) < 2 {
+		return false, fmt.Errorf("arg[%s] format error", c.args[0])
+	}
 	if err := c.checkLong(info[0]); err != nil {
 		return false, err
 	}
@@ -290,11 +293,11 @@ func (c *CommandLine) parseOne() (bool, error) {
 		}
 	}
 
-	if c.args[0][0] == '-' && c.args[0][1] != '-' {
+	if len(c.args[0]) >= 2 && c.args[0][0] == '-' && c.args[0][1] != '-' {
 		return c.parseShort()
 	}
 
-	if c.args[0][0] == '-' && c.args[0][1] == '-' {
+	if len(c.args[0]) >= 2 && c.args[0][0] == '-' && c.args[0][1] == '-' {
 		return c.parseLong()
 	}
 

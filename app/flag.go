@@ -41,7 +41,11 @@ func (f *Flag) IsInput() bool {
 }
 
 func (f *Flag) checkDefault() {
-	if !f.has {
+	if f.has {
+		return
+	}
+
+	if f.def == nil {
 		return
 	}
 

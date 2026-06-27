@@ -32,12 +32,12 @@ func RunDir() string {
 }
 
 func IsFile(file string) bool {
-	_, err := os.Stat(file)
-	if err == nil {
-		return true
+	info, err := os.Stat(file)
+	if err != nil {
+		return false
 	}
 
-	return os.IsExist(err)
+	return !info.IsDir()
 }
 
 func CurrentDir() string {

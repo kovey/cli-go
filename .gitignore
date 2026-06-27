@@ -4,3 +4,10 @@ test
 test.log
 test.run.*
 logs*
+# Example binaries
+examples/*/mydaemon
+examples/*/basic
+# Coverage
+coverage.out
+# Bug report (generated)
+BUGS.md

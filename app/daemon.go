@@ -385,21 +385,18 @@ func (d *Daemon) _runDaemon() error {
 		debug.Erro("daemon is unsupport when app run with go run command")
 		gui.PrintlnFailure("app[%s] started", d.name)
 		os.Exit(0)
-		return nil
 	}
 
 	if util.IsFile(d.pidFile) {
 		debug.Erro("app[%s] is running", d.name)
 		gui.PrintlnFailure("app[%s] started", d.name)
 		os.Exit(0)
-		return nil
 	}
 
 	if err := d.doRun(); err != nil {
 		debug.Erro("run background process error: %s", err)
 		gui.PrintlnFailure("app[%s] started", d.name)
 		os.Exit(0)
-		return nil
 	}
 
 	go func() {
@@ -518,7 +515,9 @@ func (d *Daemon) _restart() error {
 		debug.Erro(err.Error())
 	}
 
-	d.args[1] = Ko_Command_Start
+	if len(d.args) > 1 {
+		d.args[1] = Ko_Command_Start
+	}
 	return d._run(Ko_Command_Restart)
 }
 
@@ -588,11 +587,11 @@ func (d *Daemon) Run() error {
 
 	_commanLine.Parse(os.Args[1:])
 	if !d.isBackground {
-		if flag := _commanLine.Get(ko_command_version_arg); flag.has {
+		if flag := _commanLine.Get(ko_command_version_arg); flag != nil && flag.has {
 			d._showVersion()
 			return nil
 		}
-		if flag := _commanLine.Get(ko_command_version_long_arg); flag.has {
+		if flag := _commanLine.Get(ko_command_version_long_arg); flag != nil && flag.has {
 			d._showVersion()
 			return nil
 		}
